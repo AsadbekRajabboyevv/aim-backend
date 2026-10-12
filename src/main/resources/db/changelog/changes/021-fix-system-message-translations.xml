@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+  <!-- Codes referenced in ExceptionMessageCodes that were never seeded: users saw the raw code. -->
+  <changeSet id="021-seed-missing-system-messages" author="online-menu">
+    <sql splitStatements="true"><![CDATA[
+      INSERT INTO system_message (id, code, translations) VALUES
+      (gen_random_uuid(), 'error.auth.token_expired',
+       '{"uz": "Sessiya muddati tugadi. Qaytadan kiring", "en": "Your session has expired. Please sign in again", "ru": "Сессия истекла. Войдите снова"}'::jsonb),
+      (gen_random_uuid(), 'error.auth.token_invalid',
+       '{"uz": "Sessiya yaroqsiz. Qaytadan kiring", "en": "Your session is invalid. Please sign in again", "ru": "Сессия недействительна. Войдите снова"}'::jsonb),
+      (gen_random_uuid(), 'error.auth.refresh_token_not_found',
+       '{"uz": "Sessiya topilmadi. Qaytadan kiring", "en": "Session not found. Please sign in again", "ru": "Сессия не найдена. Войдите снова"}'::jsonb),
+      (gen_random_uuid(), 'error.auth.refresh_token_revoked',
+       '{"uz": "Sessiya yakunlangan. Qaytadan kiring", "en": "This session has ended. Please sign in again", "ru": "Сессия завершена. Войдите снова"}'::jsonb),
+      (gen_random_uuid(), 'error.cafe.slug_exists',
+       '{"uz": "Bunday manzilli (slug) kafe allaqachon mavjud", "en": "A cafe with this address (slug) already exists", "ru": "Кафе с таким адресом (slug) уже существует"}'::jsonb),
+      (gen_random_uuid(), 'error.file.empty',
+       '{"uz": "Fayl bo''sh", "en": "The file is empty", "ru": "Файл пустой"}'::jsonb),
+      (gen_random_uuid(), 'error.file.type_not_allowed',
+       '{"uz": "Bu turdagi faylga ruxsat berilmagan: %s", "en": "This file type is not allowed: %s", "ru": "Этот тип файла не разрешён: %s"}'::jsonb),
+      (gen_random_uuid(), 'error.file.too_large',
+       '{"uz": "Fayl hajmi juda katta", "en": "The file is too large", "ru": "Файл слишком большой"}'::jsonb),
+      (gen_random_uuid(), 'error.file.storage_failed',
+       '{"uz": "Faylni saqlab bo''lmadi. Qayta urinib ko''ring", "en": "The file could not be saved. Please try again", "ru": "Не удалось сохранить файл. Попробуйте ещё раз"}'::jsonb),
+      (gen_random_uuid(), 'error.language.not_found',
+       '{"uz": "Til topilmadi: %s", "en": "Language not found: %s", "ru": "Язык не найден: %s"}'::jsonb),
+      (gen_random_uuid(), 'error.language.code_exists',
+       '{"uz": "Bunday kodli til allaqachon mavjud: %s", "en": "A language with this code already exists: %s", "ru": "Язык с таким кодом уже существует: %s"}'::jsonb),
+      (gen_random_uuid(), 'error.language.cannot_delete_default',
+       '{"uz": "Standart tilni (%s) o''chirib bo''lmaydi", "en": "The default language (%s) cannot be deleted", "ru": "Нельзя удалить язык по умолчанию (%s)"}'::jsonb),
+      (gen_random_uuid(), 'error.system_message.not_found',
+       '{"uz": "Tizim xabari topilmadi: %s", "en": "System message not found: %s", "ru": "Системное сообщение не найдено: %s"}'::jsonb),
+      (gen_random_uuid(), 'error.system_message.code_exists',
+       '{"uz": "Bunday kodli tizim xabari allaqachon mavjud: %s", "en": "A system message with this code already exists: %s", "ru": "Системное сообщение с таким кодом уже существует: %s"}'::jsonb)
+      ON CONFLICT (code) DO NOTHING;
+    ]]></sql>
+  </changeSet>
+
+  <changeSet id="021-fix-system-message-texts" author="online-menu">
+    <sql splitStatements="true"><![CDATA[
+      UPDATE system_message
+      SET translations = '{"uz": "Kiritilgan ma''lumotlar noto''g''ri", "en": "Some fields are invalid", "ru": "Введённые данные некорректны"}'::jsonb
+      WHERE code = 'error.validation.failed';
+
+      UPDATE system_message
+      SET translations = '{"uz": "Bu hisob Google orqali yaratilgan. «Google orqali kirish» tugmasidan foydalaning yoki profil sozlamalarida parol o''rnating", "en": "This account was created with Google. Use «Sign in with Google» or set a password in your profile settings", "ru": "Этот аккаунт создан через Google. Используйте «Войти через Google» или задайте пароль в настройках профиля"}'::jsonb
+      WHERE code = 'error.auth.password_not_set';
+    ]]></sql>
+  </changeSet>
+
+</databaseChangeLog>

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+  <changeSet id="008-add-cafe-owner" author="online-menu">
+    <addColumn tableName="cafe">
+      <column name="owner_id" type="UUID"/>
+    </addColumn>
+    <addForeignKeyConstraint baseTableName="cafe" baseColumnNames="owner_id"
+      constraintName="fk_cafe_owner"
+      referencedTableName="app_user" referencedColumnNames="id"
+      onDelete="SET NULL"/>
+    <createIndex tableName="cafe" indexName="idx_cafe_owner_id">
+      <column name="owner_id"/>
+    </createIndex>
+  </changeSet>
+
+  <changeSet id="008-migrate-cafe-owner-data" author="online-menu">
+    <sql>
+      UPDATE cafe c
+      SET owner_id = (SELECT u.id
+                      FROM app_user u
+                      WHERE u.cafe_id = c.id
+                      ORDER BY u.created_at LIMIT 1)
+      WHERE c.owner_id IS NULL
+    </sql>
+  </changeSet>
+
+  <changeSet id="008-drop-app-user-cafe-id" author="online-menu">
+    <dropForeignKeyConstraint baseTableName="app_user" constraintName="fk_app_user_cafe"/>
+    <dropColumn tableName="app_user" columnName="cafe_id"/>
+  </changeSet>
+
+  <changeSet id="008-seed-cafe-owner-messages" author="online-menu">
+    <insert tableName="system_message">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="code" value="error.cafe.limit_exceeded"/>
+      <column name="translations"
+        value='{"uz": "Bitta foydalanuvchi ko&apos;pi bilan %s ta kafega ega bo&apos;lishi mumkin", "en": "A user can own at most %s cafes", "ru": "Пользователь может иметь не более %s кафе"}'/>
+    </insert>
+    <insert tableName="system_message">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="code" value="error.cafe.owner_invalid"/>
+      <column name="translations"
+        value='{"uz": "Kafe egasi faqat kafe administratori bo&apos;lishi mumkin", "en": "Only a cafe admin can own a cafe", "ru": "Владельцем кафе может быть только администратор кафе"}'/>
+    </insert>
+  </changeSet>
+
+</databaseChangeLog>

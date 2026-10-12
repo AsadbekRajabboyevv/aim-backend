@@ -1,0 +1,431 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+  <!--
+    Terms of use and Privacy policy shown on /terms and /privacy, edited by the super admin on the
+    "Huquqiy hujjatlar" page. The texts below are only a starting point: they are inserted once and never
+    overwrite what the admin saved. Words in [square brackets] are company details to fill in.
+  -->
+  <changeSet id="025-create-legal-document-table" author="online-menu">
+    <createTable tableName="legal_document">
+      <column name="id" type="UUID">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="slug" type="VARCHAR(50)">
+        <constraints nullable="false" unique="true" uniqueConstraintName="uk_legal_document_slug"/>
+      </column>
+      <column name="title_translations" type="JSONB" defaultValue="{}">
+        <constraints nullable="false"/>
+      </column>
+      <column name="content_translations" type="JSONB" defaultValue="{}">
+        <constraints nullable="false"/>
+      </column>
+      <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+        <constraints nullable="false"/>
+      </column>
+      <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+        <constraints nullable="false"/>
+      </column>
+      <column name="created_by" type="VARCHAR(200)"/>
+      <column name="updated_by" type="VARCHAR(200)"/>
+    </createTable>
+  </changeSet>
+
+  <changeSet id="025-seed-legal-messages" author="online-menu">
+    <sql splitStatements="false"><![CDATA[
+      INSERT INTO system_message (id, code, translations) VALUES
+      (gen_random_uuid(), 'error.legal.not_found',
+       '{"uz":"Hujjat topilmadi: %s","ru":"Документ не найден: %s","en":"Document not found: %s"}'::jsonb)
+      ON CONFLICT (code) DO NOTHING;
+    ]]></sql>
+  </changeSet>
+
+  <changeSet id="025-seed-terms" author="online-menu">
+    <sql splitStatements="false"><![CDATA[
+INSERT INTO legal_document (id, slug, title_translations, content_translations) VALUES (
+gen_random_uuid(), 'terms',
+jsonb_build_object(
+  'uz', 'Foydalanish shartlari',
+  'ru', 'Условия использования',
+  'en', 'Terms of use'),
+jsonb_build_object(
+'uz', $uz$Ushbu shartlar AIM onlayn menyu platformasidan (keyingi o'rinlarda — «Xizmat») foydalanish qoidalarini belgilaydi. Xizmatda ro'yxatdan o'tish yoki undan foydalanish orqali siz ushbu shartlarga rozilik bildirasiz.
+
+## Atamalar
+- **Xizmat** — AIM veb-platformasi: boshqaruv paneli, ochiq menyu sahifalari, QR kodlar va AI yordamchi.
+- **Biz** — Xizmat egasi [kompaniya nomi].
+- **Foydalanuvchi** — Xizmatda hisob ochgan kafe, bar yoki restoran egasi yoki uning vakili.
+- **Mehmon** — menyuni planshet, telefon yoki QR kod orqali ko'radigan shaxs.
+
+## Ro'yxatdan o'tish va hisob
+- Hisob email va parol yoki Google hisobi orqali ochiladi.
+- Siz ro'yxatdan o'tishda to'g'ri ma'lumot berishingiz va uni dolzarb saqlashingiz kerak.
+- Parolingiz maxfiyligi va hisobingizda bajarilgan barcha amallar uchun o'zingiz javob berasiz.
+- Hisobingizdan ruxsatsiz foydalanilganini sezsangiz, darhol biz bilan bog'laning.
+
+## Xizmatdan foydalanish
+Xizmat kafe va restoranlar menyusini onlayn yuritish uchun mo'ljallangan. Quyidagilar taqiqlanadi:
+- qonunga zid, haqoratli yoki boshqalarning huquqlarini buzadigan kontent joylash;
+- Xizmatning ishlashiga xalaqit berish, himoyasini chetlab o'tishga urinish yoki uni avtomatik vositalar bilan ortiqcha yuklash;
+- boshqa foydalanuvchilarning hisoblari yoki ma'lumotlariga ruxsatsiz kirish;
+- Xizmatni sotish, ijaraga berish yoki uning asosida raqobatdosh mahsulot yaratish.
+
+## Kontent
+Menyu, narxlar, rasmlar va tavsiflar (keyingi o'rinlarda — «Kontent») sizga tegishli bo'lib qoladi. Siz Kontentni joylash huquqiga ega ekaningizni tasdiqlaysiz va bizga uni Xizmat orqali mehmonlarga ko'rsatish uchun zarur bo'lgan ruxsatni berasiz.
+
+Menyudagi narxlar, tarkib va allergenlar haqidagi ma'lumotning to'g'riligi uchun Foydalanuvchi javob beradi.
+
+## Tariflar va to'lov
+- Xizmat tariflari va ularning imkoniyatlari tariflar sahifasida ko'rsatilgan.
+- To'lov Payme, Click yoki Uzum orqali amalga oshiriladi. Karta ma'lumotlari to'lov tizimi tomonida qayta ishlanadi, biz ularni olmaymiz va saqlamaymiz.
+- Tarifni istalgan vaqtda almashtirish mumkin: joriy tarifdan qolgan summa yangi tarifga kunlar sifatida o'tkaziladi.
+- Obuna muddati tugagach, to'lov qilinmaguncha pullik imkoniyatlar cheklanadi. Ma'lumotlaringiz o'chirilmaydi.
+- Qonunchilikda nazarda tutilgan hollardan tashqari to'langan summa qaytarilmaydi.
+
+## AI yordamchi
+AI yordamchi sizning so'rovingiz asosida menyuga o'zgartirishlar taklif qiladi. O'zgarishlar faqat siz tasdiqlaganingizdan keyin bajariladi. AI javoblari xato bo'lishi mumkin, shuning uchun ularni tasdiqlashdan oldin tekshiring. So'rovlaringiz javob olish uchun AI xizmati provayderiga yuboriladi (batafsil — Maxfiylik siyosatida).
+
+## Xizmat mavjudligi
+Biz Xizmatning uzluksiz ishlashiga harakat qilamiz, lekin texnik ishlar, nosozliklar yoki bizga bog'liq bo'lmagan sabablarga ko'ra vaqtincha uzilishlar bo'lishi mumkin. Imkon qadar rejalashtirilgan ishlar haqida oldindan xabar beramiz.
+
+## Mas'uliyatni cheklash
+Xizmat «boricha» taqdim etiladi. Qonun ruxsat bergan darajada biz bilvosita zararlar, boy berilgan foyda yoki Kontentdagi xatolar oqibatlari uchun javobgar emasmiz. Har qanday holatda bizning javobgarligimiz oxirgi 3 oyda Xizmat uchun to'lagan summangiz bilan cheklanadi.
+
+## Hisobni to'xtatish
+Siz hisobingizni istalgan vaqtda yopishingiz mumkin. Ushbu shartlar jiddiy buzilganda biz hisobni ogohlantirish bilan yoki, zarur bo'lsa, darhol to'xtatib qo'yishimiz mumkin.
+
+## Shartlarning o'zgarishi
+Biz ushbu shartlarni yangilashimiz mumkin. Yangi tahrir shu sahifada e'lon qilinadi va sahifa boshidagi sana yangilanadi. Muhim o'zgarishlar haqida email orqali xabar beramiz. O'zgarishlardan keyin Xizmatdan foydalanishni davom ettirish yangi shartlarga rozilikni bildiradi.
+
+## Amaldagi qonunchilik
+Ushbu shartlar O'zbekiston Respublikasi qonunchiligiga muvofiq tartibga solinadi. Nizolar avvalo muzokaralar yo'li bilan, kelishuvga erishilmasa — qonunda belgilangan tartibda sudda hal qilinadi.
+
+## Bog'lanish
+Savollar bo'yicha: [email manzil], [telefon], [yuridik manzil].$uz$,
+
+'ru', $ru$Настоящие условия определяют правила использования платформы онлайн-меню AIM (далее — «Сервис»). Регистрируясь в Сервисе или пользуясь им, вы соглашаетесь с этими условиями.
+
+## Термины
+- **Сервис** — веб-платформа AIM: панель управления, открытые страницы меню, QR-коды и AI-помощник.
+- **Мы** — владелец Сервиса [название компании].
+- **Пользователь** — владелец кафе, бара или ресторана либо его представитель, создавший аккаунт в Сервисе.
+- **Гость** — человек, который просматривает меню на планшете, телефоне или по QR-коду.
+
+## Регистрация и аккаунт
+- Аккаунт создаётся по email и паролю или через аккаунт Google.
+- При регистрации вы обязуетесь указывать достоверные данные и поддерживать их в актуальном состоянии.
+- Вы отвечаете за сохранность пароля и за все действия, выполненные в вашем аккаунте.
+- Если заметили несанкционированный доступ к аккаунту, сразу свяжитесь с нами.
+
+## Использование Сервиса
+Сервис предназначен для ведения меню кафе и ресторанов онлайн. Запрещается:
+- размещать незаконный, оскорбительный или нарушающий чужие права контент;
+- мешать работе Сервиса, пытаться обойти его защиту или чрезмерно нагружать его автоматическими средствами;
+- получать несанкционированный доступ к аккаунтам или данным других пользователей;
+- продавать, сдавать в аренду Сервис или создавать на его основе конкурирующий продукт.
+
+## Контент
+Меню, цены, фотографии и описания (далее — «Контент») остаются вашими. Вы подтверждаете, что имеете право размещать Контент, и предоставляете нам разрешение, необходимое для показа его гостям через Сервис.
+
+За достоверность цен, состава блюд и информации об аллергенах в меню отвечает Пользователь.
+
+## Тарифы и оплата
+- Тарифы Сервиса и их возможности указаны на странице тарифов.
+- Оплата производится через Payme, Click или Uzum. Данные карты обрабатываются платёжной системой, мы их не получаем и не храним.
+- Тариф можно сменить в любой момент: остаток по текущему тарифу переносится в новый в виде дней.
+- После окончания подписки платные возможности ограничиваются до оплаты. Ваши данные не удаляются.
+- Уплаченные суммы не возвращаются, кроме случаев, предусмотренных законодательством.
+
+## AI-помощник
+AI-помощник предлагает изменения в меню по вашему запросу. Изменения выполняются только после вашего подтверждения. Ответы AI могут содержать ошибки, поэтому проверяйте их перед подтверждением. Ваши запросы передаются провайдеру AI-сервиса для получения ответа (подробнее — в Политике конфиденциальности).
+
+## Доступность Сервиса
+Мы стремимся к бесперебойной работе Сервиса, но возможны временные перерывы из-за технических работ, сбоев или причин, от нас не зависящих. О плановых работах по возможности предупреждаем заранее.
+
+## Ограничение ответственности
+Сервис предоставляется «как есть». В пределах, допускаемых законом, мы не несём ответственности за косвенные убытки, упущенную выгоду или последствия ошибок в Контенте. В любом случае наша ответственность ограничена суммой, уплаченной вами за Сервис за последние 3 месяца.
+
+## Прекращение работы аккаунта
+Вы можете закрыть аккаунт в любой момент. При серьёзном нарушении этих условий мы можем приостановить аккаунт с предупреждением, а при необходимости — немедленно.
+
+## Изменение условий
+Мы можем обновлять эти условия. Новая редакция публикуется на этой странице, а дата в её начале обновляется. О существенных изменениях сообщаем по email. Продолжение использования Сервиса после изменений означает согласие с новыми условиями.
+
+## Применимое право
+Настоящие условия регулируются законодательством Республики Узбекистан. Споры решаются путём переговоров, а при недостижении согласия — в суде в установленном законом порядке.
+
+## Контакты
+По вопросам: [email], [телефон], [юридический адрес].$ru$,
+
+'en', $en$These terms set out the rules for using the AIM online menu platform (the «Service»). By signing up for or using the Service, you agree to these terms.
+
+## Definitions
+- **Service** — the AIM web platform: the dashboard, public menu pages, QR codes and the AI assistant.
+- **We** — the owner of the Service, [company name].
+- **User** — the owner of a cafe, bar or restaurant, or their representative, who has an account on the Service.
+- **Guest** — a person viewing the menu on a tablet, a phone or through a QR code.
+
+## Account
+- An account is created with an email and password or with a Google account.
+- You must provide accurate information when signing up and keep it up to date.
+- You are responsible for keeping your password safe and for everything done in your account.
+- If you notice unauthorised access to your account, contact us right away.
+
+## Using the Service
+The Service is meant for running cafe and restaurant menus online. You must not:
+- post content that is unlawful, offensive or infringes the rights of others;
+- interfere with the Service, try to bypass its security or overload it with automated tools;
+- access other users' accounts or data without permission;
+- sell or rent out the Service, or build a competing product on top of it.
+
+## Content
+Menus, prices, photos and descriptions (the «Content») remain yours. You confirm that you have the right to publish the Content and give us the permission needed to show it to guests through the Service.
+
+The User is responsible for the accuracy of prices, ingredients and allergen information in the menu.
+
+## Plans and payment
+- The plans of the Service and what they include are listed on the pricing page.
+- Payments are made via Payme, Click or Uzum. Card details are processed by the payment provider; we neither receive nor store them.
+- You can switch plans at any time: what is left of your current plan carries over to the new one as days.
+- When a subscription ends, paid features are limited until you pay. Your data is not deleted.
+- Payments are non-refundable except where the law requires otherwise.
+
+## AI assistant
+The AI assistant suggests menu changes based on your request. Changes are applied only after you confirm them. AI answers can be wrong, so check them before confirming. Your requests are sent to an AI provider to produce an answer (see the Privacy policy for details).
+
+## Availability
+We aim to keep the Service running without interruption, but maintenance, failures or causes beyond our control can lead to temporary outages. Where possible, we announce planned maintenance in advance.
+
+## Limitation of liability
+The Service is provided «as is». To the extent permitted by law, we are not liable for indirect damages, lost profits or the consequences of errors in the Content. In any case, our liability is limited to the amount you paid for the Service in the last 3 months.
+
+## Ending your account
+You can close your account at any time. If these terms are seriously breached, we may suspend the account after a warning or, where necessary, immediately.
+
+## Changes to these terms
+We may update these terms. The new version is published on this page and the date at the top is updated. We notify you of significant changes by email. Continuing to use the Service after the changes means you accept the new terms.
+
+## Governing law
+These terms are governed by the laws of the Republic of Uzbekistan. Disputes are settled by negotiation first and, failing agreement, in court as provided by law.
+
+## Contact
+For questions: [email], [phone], [legal address].$en$)
+) ON CONFLICT (slug) DO NOTHING;
+    ]]></sql>
+  </changeSet>
+
+  <changeSet id="025-seed-privacy" author="online-menu">
+    <sql splitStatements="false"><![CDATA[
+INSERT INTO legal_document (id, slug, title_translations, content_translations) VALUES (
+gen_random_uuid(), 'privacy',
+jsonb_build_object(
+  'uz', 'Maxfiylik siyosati',
+  'ru', 'Политика конфиденциальности',
+  'en', 'Privacy policy'),
+jsonb_build_object(
+'uz', $uz$Ushbu siyosat AIM platformasi (keyingi o'rinlarda — «Xizmat») qanday shaxsiy ma'lumotlarni yig'ishi, ulardan qanday foydalanishi va ularni qanday himoya qilishini tushuntiradi. Ma'lumotlar O'zbekiston Respublikasining «Shaxsga doir ma'lumotlar to'g'risida»gi Qonuniga muvofiq qayta ishlanadi.
+
+## Qanday ma'lumotlarni yig'amiz
+### Hisob ochganingizda
+- ism va familiya, email manzil, mamlakat;
+- parol — faqat shifrlangan (xeshlangan) ko'rinishda, uni hech kim, shu jumladan biz ham o'qiy olmaydi;
+- Google orqali kirsangiz — Google hisobingiz identifikatori, ismingiz va emailingiz.
+
+### Xizmatdan foydalanganingizda
+- kafe ma'lumotlari: nomi, manzili, telefoni, ish vaqti, Wi-Fi, ijtimoiy tarmoqlar;
+- menyu: kategoriyalar, taomlar, narxlar, rasmlar, chegirmalar;
+- AI yordamchiga yozgan xabarlaringiz va suhbatlar tarixi;
+- tarif va to'lovlar tarixi (summa, sana, holat). Karta ma'lumotlarini biz olmaymiz.
+- texnik ma'lumotlar: IP manzil, brauzer turi va so'rovlar vaqti — xavfsizlik va nosozliklarni aniqlash uchun.
+
+### Mehmonlar haqida
+Menyuni ko'rayotgan mehmonlardan ro'yxatdan o'tish talab qilinmaydi va biz ularning shaxsiy ma'lumotlarini yig'maymiz. Brauzerda faqat tanlangan menyu tili saqlanadi.
+
+## Ma'lumotlardan foydalanish maqsadlari
+- hisobingizni yaratish va unga kirishni ta'minlash;
+- menyuingizni mehmonlarga ko'rsatish;
+- tarif va to'lovlarni hisobga olish;
+- AI yordamchi javoblarini tayyorlash;
+- Xizmat haqidagi muhim xabarlarni yuborish (masalan, obuna tugashi yoki shartlar o'zgarishi);
+- Xizmat xavfsizligini ta'minlash va uni yaxshilash.
+
+Biz ma'lumotlaringizni sotmaymiz va reklama maqsadida uchinchi tomonlarga bermaymiz.
+
+## Uchinchi tomonlar
+Xizmat ishlashi uchun ayrim ma'lumotlar quyidagi hamkorlarga uzatiladi — faqat zarur hajmda:
+- **Google** — agar Google orqali kirsangiz, avtorizatsiya uchun;
+- **Payme, Click, Uzum** — to'lovni amalga oshirish uchun (buyurtma raqami va summa);
+- **AI provayderlari** (masalan, Google Gemini yoki OpenAI) — AI yordamchiga yozgan xabaringiz va unga javob berish uchun zarur menyu ma'lumotlari;
+- **hosting provayderi** — ma'lumotlar saqlanadigan serverlar uchun: [hosting provayderi va serverlar joylashuvi].
+
+Qonunda nazarda tutilgan hollarda ma'lumotlar vakolatli davlat organlariga ularning rasmiy so'roviga ko'ra taqdim etilishi mumkin.
+
+## Brauzerda saqlanadigan ma'lumotlar
+Xizmat reklama yoki kuzatuv cookie-fayllaridan foydalanmaydi. Brauzeringizning lokal xotirasida (localStorage) faqat ishlash uchun zarur ma'lumotlar saqlanadi: kirish tokenlari, tanlangan til va interfeys matnlari. Ularni brauzer sozlamalaridan istalgan vaqtda o'chirishingiz mumkin — bunda tizimdan chiqasiz.
+
+## Saqlash muddati
+- Hisob ma'lumotlari va kontent hisobingiz faol bo'lgan davrda saqlanadi.
+- Hisob yopilgandan keyin ma'lumotlar [N] kun ichida o'chiriladi yoki anonimlashtiriladi.
+- To'lovlar haqidagi yozuvlar qonunchilikda belgilangan muddat davomida saqlanadi.
+
+## Ma'lumotlarni himoya qilish
+Ma'lumotlar shifrlangan ulanish (HTTPS) orqali uzatiladi, parollar xeshlangan holda saqlanadi, boshqaruv paneliga kirish rollar bo'yicha cheklangan. Shunga qaramay, internet orqali uzatishning hech bir usuli to'liq xavfsiz emas — hisobingiz uchun ishonchli parol tanlang.
+
+## Sizning huquqlaringiz
+Siz quyidagilarga haqlisiz:
+- o'zingiz haqingizdagi ma'lumotlar bilan tanishish;
+- noto'g'ri ma'lumotlarni tuzatish (ko'pchiligini «Profil» sahifasida o'zingiz o'zgartira olasiz);
+- hisobingiz va ma'lumotlaringizni o'chirishni so'rash;
+- ma'lumotlarni qayta ishlashga rozilikni qaytarib olish.
+
+So'rovlarni [email manzil] ga yuboring — 30 kun ichida javob beramiz.
+
+## Bolalar
+Xizmat biznes egalari uchun mo'ljallangan va 18 yoshga to'lmagan shaxslar tomonidan hisob ochish uchun emas.
+
+## Siyosatning o'zgarishi
+Biz ushbu siyosatni yangilashimiz mumkin. Yangi tahrir shu sahifada e'lon qilinadi va sahifa boshidagi sana yangilanadi. Muhim o'zgarishlar haqida email orqali xabar beramiz.
+
+## Bog'lanish
+Shaxsiy ma'lumotlar bo'yicha savollar: [email manzil], [yuridik manzil].$uz$,
+
+'ru', $ru$Настоящая политика объясняет, какие персональные данные собирает платформа AIM (далее — «Сервис»), как она их использует и защищает. Данные обрабатываются в соответствии с Законом Республики Узбекистан «О персональных данных».
+
+## Какие данные мы собираем
+### При создании аккаунта
+- имя и фамилия, email, страна;
+- пароль — только в зашифрованном (хешированном) виде, прочитать его не может никто, включая нас;
+- при входе через Google — идентификатор вашего аккаунта Google, имя и email.
+
+### При использовании Сервиса
+- данные кафе: название, адрес, телефон, часы работы, Wi-Fi, соцсети;
+- меню: категории, блюда, цены, фотографии, скидки;
+- сообщения AI-помощнику и история диалогов;
+- история тарифов и платежей (сумма, дата, статус). Данные карты мы не получаем.
+- технические данные: IP-адрес, тип браузера и время запросов — для безопасности и поиска сбоев.
+
+### О гостях
+От гостей, просматривающих меню, регистрация не требуется, и мы не собираем их персональные данные. В браузере сохраняется только выбранный язык меню.
+
+## Цели использования данных
+- создание аккаунта и обеспечение входа в него;
+- показ вашего меню гостям;
+- учёт тарифов и платежей;
+- подготовка ответов AI-помощника;
+- отправка важных уведомлений о Сервисе (например, об окончании подписки или изменении условий);
+- обеспечение безопасности и улучшение Сервиса.
+
+Мы не продаём ваши данные и не передаём их третьим лицам в рекламных целях.
+
+## Третьи стороны
+Для работы Сервиса часть данных передаётся следующим партнёрам — только в необходимом объёме:
+- **Google** — для авторизации, если вы входите через Google;
+- **Payme, Click, Uzum** — для проведения оплаты (номер заказа и сумма);
+- **провайдеры AI** (например, Google Gemini или OpenAI) — ваше сообщение AI-помощнику и данные меню, нужные для ответа;
+- **хостинг-провайдер** — серверы, на которых хранятся данные: [хостинг-провайдер и расположение серверов].
+
+В случаях, предусмотренных законом, данные могут быть предоставлены уполномоченным государственным органам по их официальному запросу.
+
+## Данные в браузере
+Сервис не использует рекламные и отслеживающие cookie. В локальном хранилище браузера (localStorage) сохраняется только необходимое для работы: токены входа, выбранный язык и тексты интерфейса. Их можно удалить в настройках браузера в любой момент — при этом вы выйдете из системы.
+
+## Сроки хранения
+- Данные аккаунта и контент хранятся, пока аккаунт активен.
+- После закрытия аккаунта данные удаляются или обезличиваются в течение [N] дней.
+- Записи о платежах хранятся в течение срока, установленного законодательством.
+
+## Защита данных
+Данные передаются по зашифрованному соединению (HTTPS), пароли хранятся в хешированном виде, доступ к панели управления ограничен по ролям. Тем не менее ни один способ передачи данных через интернет не является полностью безопасным — выбирайте надёжный пароль.
+
+## Ваши права
+Вы вправе:
+- ознакомиться с данными о себе;
+- исправить неверные данные (большую часть можно изменить самостоятельно на странице «Профиль»);
+- потребовать удаления аккаунта и данных;
+- отозвать согласие на обработку данных.
+
+Направляйте запросы на [email] — ответим в течение 30 дней.
+
+## Дети
+Сервис предназначен для владельцев бизнеса и не предназначен для создания аккаунтов лицами младше 18 лет.
+
+## Изменение политики
+Мы можем обновлять эту политику. Новая редакция публикуется на этой странице, а дата в её начале обновляется. О существенных изменениях сообщаем по email.
+
+## Контакты
+Вопросы о персональных данных: [email], [юридический адрес].$ru$,
+
+'en', $en$This policy explains what personal data the AIM platform (the «Service») collects, how it uses it and how it protects it. Data is processed in accordance with the Law of the Republic of Uzbekistan «On Personal Data».
+
+## What we collect
+### When you create an account
+- your name, email address and country;
+- your password — stored only in hashed form, so nobody, including us, can read it;
+- if you sign in with Google — your Google account ID, name and email.
+
+### When you use the Service
+- cafe details: name, address, phone, opening hours, Wi-Fi, social media;
+- menus: categories, dishes, prices, photos, discounts;
+- your messages to the AI assistant and the conversation history;
+- plan and payment history (amount, date, status). We do not receive card details.
+- technical data: IP address, browser type and request times — for security and troubleshooting.
+
+### About guests
+Guests viewing a menu do not need to sign up, and we do not collect their personal data. Only the chosen menu language is stored in their browser.
+
+## Why we use it
+- to create your account and let you sign in;
+- to show your menu to guests;
+- to keep track of plans and payments;
+- to produce the AI assistant's answers;
+- to send important notices about the Service (for example, when a subscription ends or the terms change);
+- to keep the Service secure and improve it.
+
+We do not sell your data or share it with third parties for advertising.
+
+## Third parties
+Some data is shared with the following partners, only as far as the Service needs it:
+- **Google** — for sign-in, if you sign in with Google;
+- **Payme, Click, Uzum** — to process payments (order number and amount);
+- **AI providers** (such as Google Gemini or OpenAI) — your message to the AI assistant and the menu data needed to answer it;
+- **hosting provider** — the servers where data is stored: [hosting provider and server location].
+
+Where the law requires it, data may be provided to authorised government bodies at their official request.
+
+## Data stored in your browser
+The Service does not use advertising or tracking cookies. Your browser's local storage (localStorage) holds only what the Service needs to work: sign-in tokens, your chosen language and interface texts. You can clear them in your browser settings at any time, which signs you out.
+
+## How long we keep data
+- Account data and content are kept while your account is active.
+- After an account is closed, its data is deleted or anonymised within [N] days.
+- Payment records are kept for the period required by law.
+
+## Security
+Data travels over an encrypted connection (HTTPS), passwords are stored hashed and access to the dashboard is restricted by role. Still, no method of transmission over the internet is completely secure, so choose a strong password.
+
+## Your rights
+You have the right to:
+- see the data we hold about you;
+- correct inaccurate data (most of it you can change yourself on the Profile page);
+- ask us to delete your account and data;
+- withdraw your consent to processing.
+
+Send requests to [email] — we reply within 30 days.
+
+## Children
+The Service is meant for business owners and is not intended for accounts created by anyone under 18.
+
+## Changes to this policy
+We may update this policy. The new version is published on this page and the date at the top is updated. We notify you of significant changes by email.
+
+## Contact
+Questions about personal data: [email], [legal address].$en$)
+) ON CONFLICT (slug) DO NOTHING;
+    ]]></sql>
+  </changeSet>
+
+</databaseChangeLog>

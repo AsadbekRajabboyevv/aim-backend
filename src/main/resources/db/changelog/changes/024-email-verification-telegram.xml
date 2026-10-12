@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+  <!-- Accounts that existed before email verification count as verified. -->
+  <changeSet id="024-app-user-email-verified" author="online-menu">
+    <addColumn tableName="app_user">
+      <column name="email_verified" type="BOOLEAN" defaultValueBoolean="true">
+        <constraints nullable="false"/>
+      </column>
+    </addColumn>
+  </changeSet>
+
+  <!-- Telegram sign-ups have no email. -->
+  <changeSet id="024-app-user-telegram" author="online-menu">
+    <dropNotNullConstraint tableName="app_user" columnName="email" columnDataType="VARCHAR(200)"/>
+    <addColumn tableName="app_user">
+      <column name="telegram_id" type="BIGINT">
+        <constraints nullable="true" unique="true" uniqueConstraintName="uk_app_user_telegram_id"/>
+      </column>
+    </addColumn>
+  </changeSet>
+
+  <changeSet id="024-create-email-verification-table" author="online-menu">
+    <createTable tableName="email_verification">
+      <column name="id" type="UUID">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="user_id" type="UUID">
+        <constraints nullable="false" unique="true" uniqueConstraintName="uk_email_verification_user"
+          foreignKeyName="fk_email_verification_user" references="app_user(id)" deleteCascade="true"/>
+      </column>
+      <column name="code_hash" type="VARCHAR(128)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="token_hash" type="VARCHAR(128)">
+        <constraints nullable="false" unique="true" uniqueConstraintName="uk_email_verification_token"/>
+      </column>
+      <column name="expires_at" type="TIMESTAMP WITH TIME ZONE">
+        <constraints nullable="false"/>
+      </column>
+      <column name="sent_at" type="TIMESTAMP WITH TIME ZONE">
+        <constraints nullable="false"/>
+      </column>
+      <column name="attempts" type="INT" defaultValueNumeric="0">
+        <constraints nullable="false"/>
+      </column>
+      <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+        <constraints nullable="false"/>
+      </column>
+      <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+        <constraints nullable="false"/>
+      </column>
+      <column name="created_by" type="VARCHAR(200)"/>
+      <column name="updated_by" type="VARCHAR(200)"/>
+    </createTable>
+  </changeSet>
+
+  <changeSet id="024-seed-auth-verification-messages" author="online-menu" runOnChange="true">
+    <sql splitStatements="false"><![CDATA[
+      INSERT INTO system_message (id, code, translations) VALUES
+      (gen_random_uuid(), 'error.auth.email_not_verified',
+       '{"uz":"Email tasdiqlanmagan. Pochtangizga yuborilgan kodni kiriting","ru":"Email не подтверждён. Введите код, отправленный на вашу почту","en":"Email is not verified. Enter the code sent to your inbox"}'::jsonb),
+      (gen_random_uuid(), 'error.auth.verification_invalid',
+       '{"uz":"Tasdiqlash kodi noto''g''ri","ru":"Неверный код подтверждения","en":"Invalid verification code"}'::jsonb),
+      (gen_random_uuid(), 'error.auth.verification_expired',
+       '{"uz":"Tasdiqlash kodi yoki havolaning muddati tugagan. Yangi kod so''rang","ru":"Срок действия кода или ссылки истёк. Запросите новый код","en":"The code or link has expired. Request a new code"}'::jsonb),
+      (gen_random_uuid(), 'error.auth.verification_attempts_exceeded',
+       '{"uz":"Urinishlar soni tugadi. Yangi kod so''rang","ru":"Слишком много попыток. Запросите новый код","en":"Too many attempts. Request a new code"}'::jsonb),
+      (gen_random_uuid(), 'error.auth.verification_resend_too_soon',
+       '{"uz":"Yangi kodni %s soniyadan keyin so''rash mumkin","ru":"Новый код можно запросить через %s сек.","en":"You can request a new code in %s seconds"}'::jsonb),
+      (gen_random_uuid(), 'error.auth.email_send_failed',
+       '{"uz":"Emailga xat yuborib bo''lmadi. Birozdan keyin qayta urinib ko''ring","ru":"Не удалось отправить письмо. Попробуйте позже","en":"Could not send the email. Please try again later"}'::jsonb),
+      (gen_random_uuid(), 'error.auth.telegram_disabled',
+       '{"uz":"Telegram orqali kirish sozlanmagan","ru":"Вход через Telegram не настроен","en":"Telegram sign-in is not configured"}'::jsonb),
+      (gen_random_uuid(), 'error.auth.telegram_invalid',
+       '{"uz":"Telegram ma''lumotlarini tasdiqlab bo''lmadi. Qayta urinib ko''ring","ru":"Не удалось проверить данные Telegram. Попробуйте ещё раз","en":"Could not verify the Telegram data. Please try again"}'::jsonb),
+      (gen_random_uuid(), 'validation.verification_code',
+       '{"uz":"Kod 6 ta raqamdan iborat bo''lishi kerak","ru":"Код должен состоять из 6 цифр","en":"The code must be 6 digits"}'::jsonb),
+      (gen_random_uuid(), 'email.verification.subject',
+       '{"uz":"Emailingizni tasdiqlang","ru":"Подтвердите email","en":"Confirm your email"}'::jsonb),
+      (gen_random_uuid(), 'email.verification.greeting',
+       '{"uz":"Salom, %s!","ru":"Здравствуйте, %s!","en":"Hi %s,"}'::jsonb),
+      (gen_random_uuid(), 'email.verification.intro',
+       '{"uz":"Ro''yxatdan o''tishni yakunlash uchun quyidagi kodni kiriting:","ru":"Чтобы завершить регистрацию, введите этот код:","en":"Enter this code to finish signing up:"}'::jsonb),
+      (gen_random_uuid(), 'email.verification.or_link',
+       '{"uz":"Yoki shu tugmani bosing:","ru":"Или нажмите на кнопку:","en":"Or click the button:"}'::jsonb),
+      (gen_random_uuid(), 'email.verification.button',
+       '{"uz":"Emailni tasdiqlash","ru":"Подтвердить email","en":"Confirm email"}'::jsonb),
+      (gen_random_uuid(), 'email.verification.expires',
+       '{"uz":"Kod va havola %s daqiqa amal qiladi. Agar siz ro''yxatdan o''tmagan bo''lsangiz, bu xatga e''tibor bermang.","ru":"Код и ссылка действуют %s мин. Если вы не регистрировались, просто проигнорируйте это письмо.","en":"The code and link are valid for %s minutes. If you didn''t sign up, ignore this email."}'::jsonb)
+      ON CONFLICT (code) DO UPDATE
+        SET translations = EXCLUDED.translations || system_message.translations;
+    ]]></sql>
+  </changeSet>
+
+</databaseChangeLog>

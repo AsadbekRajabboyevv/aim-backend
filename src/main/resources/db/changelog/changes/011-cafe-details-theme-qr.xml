@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="011-add-cafe-details" author="online-menu">
+        <addColumn tableName="cafe">
+            <column name="email" type="VARCHAR(200)"/>
+            <column name="working_hours" type="VARCHAR(200)"/>
+            <column name="wifi_name" type="VARCHAR(100)"/>
+            <column name="wifi_password" type="VARCHAR(100)"/>
+            <column name="social_links" type="JSONB"/>
+            <column name="theme" type="VARCHAR(30)" defaultValue="ESPRESSO">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="011-seed-public-menu-base-url" author="online-menu">
+        <insert tableName="app_setting">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="setting_key" value="menu.public_base_url"/>
+            <column name="setting_value" value="http://localhost:4200/menu"/>
+            <column name="value_type" value="STRING"/>
+            <column name="description" value="Public menu address printed into table QR codes (the cafe slug is appended)"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="011-seed-messages" author="online-menu">
+        <insert tableName="system_message">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="code" value="error.setting.key_exists"/>
+            <column name="translations" value='{"uz": "Bu kalitli sozlama allaqachon mavjud", "en": "A setting with this key already exists", "ru": "Настройка с таким ключом уже существует"}'/>
+        </insert>
+        <insert tableName="system_message">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="code" value="error.setting.protected"/>
+            <column name="translations" value='{"uz": "Bu sozlamadan tizim foydalanadi, uni o&apos;chirib yoki turini o&apos;zgartirib bo&apos;lmaydi", "en": "This setting is used by the system and cannot be deleted or retyped", "ru": "Эта настройка используется системой, её нельзя удалить или сменить тип"}'/>
+        </insert>
+        <insert tableName="system_message">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="code" value="error.language.default_required"/>
+            <column name="translations" value='{"uz": "Standart til faol bo&apos;lishi va doim bitta bo&apos;lishi kerak. Avval boshqa tilni standart qiling", "en": "There must always be one active default language. Make another language the default first", "ru": "Всегда должен быть один активный язык по умолчанию. Сначала назначьте другой язык"}'/>
+        </insert>
+        <insert tableName="system_message">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="code" value="validation.setting.key_format"/>
+            <column name="translations" value='{"uz": "Kalit faqat kichik lotin harflari, raqamlar, nuqta va pastki chiziqdan iborat bo&apos;lishi kerak", "en": "Key may contain only lowercase letters, digits, dots and underscores", "ru": "Ключ может содержать только строчные латинские буквы, цифры, точки и подчёркивания"}'/>
+        </insert>
+        <insert tableName="system_message">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="code" value="validation.url.invalid"/>
+            <column name="translations" value='{"uz": "Havola noto&apos;g&apos;ri (%s): http:// yoki https:// bilan boshlanishi kerak", "en": "Invalid link (%s): it must start with http:// or https://", "ru": "Неверная ссылка (%s): должна начинаться с http:// или https://"}'/>
+        </insert>
+    </changeSet>
+
+    <!-- Tablet menu copy for the cafe info panel and the table badge (AppConstants.MENU_UI_MESSAGE_PREFIX). -->
+    <changeSet id="011-seed-menu-ui-info-messages" author="online-menu">
+        <insert tableName="system_message">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="code" value="menu.ui.info"/>
+            <column name="translations" value='{"uz": "Ma&apos;lumot", "en": "About us", "ru": "О нас"}'/>
+        </insert>
+        <insert tableName="system_message">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="code" value="menu.ui.table"/>
+            <column name="translations" value='{"uz": "Stol", "en": "Table", "ru": "Стол"}'/>
+        </insert>
+        <insert tableName="system_message">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="code" value="menu.ui.address"/>
+            <column name="translations" value='{"uz": "Manzil", "en": "Address", "ru": "Адрес"}'/>
+        </insert>
+        <insert tableName="system_message">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="code" value="menu.ui.phone"/>
+            <column name="translations" value='{"uz": "Telefon", "en": "Phone", "ru": "Телефон"}'/>
+        </insert>
+        <insert tableName="system_message">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="code" value="menu.ui.hours"/>
+            <column name="translations" value='{"uz": "Ish vaqti", "en": "Opening hours", "ru": "Часы работы"}'/>
+        </insert>
+        <insert tableName="system_message">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="code" value="menu.ui.wifi"/>
+            <column name="translations" value='{"uz": "Wi-Fi", "en": "Wi-Fi", "ru": "Wi-Fi"}'/>
+        </insert>
+        <insert tableName="system_message">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="code" value="menu.ui.password"/>
+            <column name="translations" value='{"uz": "Parol", "en": "Password", "ru": "Пароль"}'/>
+        </insert>
+        <insert tableName="system_message">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="code" value="menu.ui.socials"/>
+            <column name="translations" value='{"uz": "Bizni kuzating", "en": "Follow us", "ru": "Мы в соцсетях"}'/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>

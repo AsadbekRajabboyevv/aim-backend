@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+  <changeSet id="010-seed-menu-ui-messages" author="online-menu">
+    <insert tableName="system_message">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="code" value="menu.ui.search"/>
+      <column name="translations"
+        value='{"uz": "Taom qidirish", "en": "Search the menu", "ru": "Поиск по меню"}'/>
+    </insert>
+    <insert tableName="system_message">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="code" value="menu.ui.items"/>
+      <column name="translations" value='{"uz": "ta taom", "en": "items", "ru": "блюд"}'/>
+    </insert>
+    <insert tableName="system_message">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="code" value="menu.ui.sold_out"/>
+      <column name="translations"
+        value='{"uz": "Tugagan", "en": "Sold out", "ru": "Нет в наличии"}'/>
+    </insert>
+    <insert tableName="system_message">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="code" value="menu.ui.results"/>
+      <column name="translations"
+        value='{"uz": "Qidiruv natijalari", "en": "Search results", "ru": "Результаты поиска"}'/>
+    </insert>
+    <insert tableName="system_message">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="code" value="menu.ui.nothing"/>
+      <column name="translations"
+        value='{"uz": "Hech narsa topilmadi", "en": "Nothing found", "ru": "Ничего не найдено"}'/>
+    </insert>
+    <insert tableName="system_message">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="code" value="menu.ui.empty"/>
+      <column name="translations"
+        value='{"uz": "Menyu tez orada tayyor bo&apos;ladi", "en": "The menu is coming soon", "ru": "Меню скоро появится"}'/>
+    </insert>
+    <insert tableName="system_message">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="code" value="menu.ui.close"/>
+      <column name="translations" value='{"uz": "Yopish", "en": "Close", "ru": "Закрыть"}'/>
+    </insert>
+    <insert tableName="system_message">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="code" value="menu.ui.fullscreen"/>
+      <column name="translations"
+        value='{"uz": "To&apos;liq ekran", "en": "Full screen", "ru": "Полный экран"}'/>
+    </insert>
+  </changeSet>
+
+</databaseChangeLog>

@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: online-menu-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-online_menu}
+      POSTGRES_USER: ${DB_USERNAME:-online_menu}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-online_menu}
+    ports:
+      - "5432:5432"
+    volumes:
+      - online-menu-postgres-data:/var/lib/postgresql/data
+
+volumes:
+  online-menu-postgres-data:

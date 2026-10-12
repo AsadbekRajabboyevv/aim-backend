@@ -1,0 +1,373 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+  <!--
+      Limits a plan can set. COUNT limits are counted by a UsageCounter bean, METERED ones are
+      counted per period in billing_usage, FEATURE ones are on (> 0) or off. A METERED or FEATURE
+      limit with a path_pattern is enforced for matching API requests without any code.
+  -->
+  <changeSet id="019-create-billing-limit-definition-table" author="online-menu">
+    <createTable tableName="billing_limit_definition">
+      <column name="id" type="UUID">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="limit_key" type="VARCHAR(64)">
+        <constraints nullable="false" unique="true" uniqueConstraintName="uk_billing_limit_key"/>
+      </column>
+      <column name="name_translations" type="JSONB">
+        <constraints nullable="false"/>
+      </column>
+      <column name="kind" type="VARCHAR(20)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="period" type="VARCHAR(20)" defaultValue="NONE">
+        <constraints nullable="false"/>
+      </column>
+      <column name="http_method" type="VARCHAR(10)"/>
+      <column name="path_pattern" type="VARCHAR(300)"/>
+      <column name="default_value" type="BIGINT" defaultValueNumeric="-1">
+        <constraints nullable="false"/>
+      </column>
+      <column name="sort_order" type="INT" defaultValueNumeric="0">
+        <constraints nullable="false"/>
+      </column>
+      <column name="built_in" type="BOOLEAN" defaultValueBoolean="false">
+        <constraints nullable="false"/>
+      </column>
+      <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+        <constraints nullable="false"/>
+      </column>
+      <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+        <constraints nullable="false"/>
+      </column>
+      <column name="created_by" type="VARCHAR(200)"/>
+      <column name="updated_by" type="VARCHAR(200)"/>
+    </createTable>
+  </changeSet>
+
+  <changeSet id="019-create-billing-plan-table" author="online-menu">
+    <createTable tableName="billing_plan">
+      <column name="id" type="UUID">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="slug" type="VARCHAR(180)">
+        <constraints nullable="false" unique="true" uniqueConstraintName="uk_billing_plan_slug"/>
+      </column>
+      <column name="name_translations" type="JSONB">
+        <constraints nullable="false"/>
+      </column>
+      <column name="description_translations" type="JSONB"/>
+      <column name="monthly_price" type="BIGINT" defaultValueNumeric="0">
+        <constraints nullable="false"/>
+      </column>
+      <column name="yearly_price" type="BIGINT" defaultValueNumeric="0">
+        <constraints nullable="false"/>
+      </column>
+      <column name="entitlements" type="JSONB" defaultValueComputed="'{}'::jsonb">
+        <constraints nullable="false"/>
+      </column>
+      <column name="sort_order" type="INT" defaultValueNumeric="0">
+        <constraints nullable="false"/>
+      </column>
+      <column name="recommended" type="BOOLEAN" defaultValueBoolean="false">
+        <constraints nullable="false"/>
+      </column>
+      <column name="active" type="BOOLEAN" defaultValueBoolean="true">
+        <constraints nullable="false"/>
+      </column>
+      <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+        <constraints nullable="false"/>
+      </column>
+      <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+        <constraints nullable="false"/>
+      </column>
+      <column name="created_by" type="VARCHAR(200)"/>
+      <column name="updated_by" type="VARCHAR(200)"/>
+    </createTable>
+  </changeSet>
+
+  <!-- One row per cafe admin: the plan they are on and until when. -->
+  <changeSet id="019-create-billing-subscription-table" author="online-menu">
+    <createTable tableName="billing_subscription">
+      <column name="id" type="UUID">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="user_id" type="UUID">
+        <constraints nullable="false" unique="true" uniqueConstraintName="uk_billing_subscription_user"/>
+      </column>
+      <column name="plan_id" type="UUID">
+        <constraints nullable="false"/>
+      </column>
+      <column name="status" type="VARCHAR(20)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="billing_period" type="VARCHAR(20)"/>
+      <column name="current_period_start" type="TIMESTAMP WITH TIME ZONE">
+        <constraints nullable="false"/>
+      </column>
+      <column name="current_period_end" type="TIMESTAMP WITH TIME ZONE">
+        <constraints nullable="false"/>
+      </column>
+      <column name="paid_amount" type="BIGINT" defaultValueNumeric="0">
+        <constraints nullable="false"/>
+      </column>
+      <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+        <constraints nullable="false"/>
+      </column>
+      <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+        <constraints nullable="false"/>
+      </column>
+      <column name="created_by" type="VARCHAR(200)"/>
+      <column name="updated_by" type="VARCHAR(200)"/>
+    </createTable>
+    <addForeignKeyConstraint baseTableName="billing_subscription" baseColumnNames="user_id"
+      constraintName="fk_billing_subscription_user"
+      referencedTableName="app_user" referencedColumnNames="id" onDelete="CASCADE"/>
+    <addForeignKeyConstraint baseTableName="billing_subscription" baseColumnNames="plan_id"
+      constraintName="fk_billing_subscription_plan"
+      referencedTableName="billing_plan" referencedColumnNames="id"/>
+  </changeSet>
+
+  <!-- Orders. order_number is what the payment systems see (Payme account.order_id, Click merchant_trans_id). -->
+  <changeSet id="019-create-billing-payment-table" author="online-menu">
+    <createSequence sequenceName="billing_order_number_seq" startValue="100001"/>
+    <createTable tableName="billing_payment">
+      <column name="id" type="UUID">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="order_number" type="BIGINT" defaultValueComputed="nextval('billing_order_number_seq')">
+        <constraints nullable="false" unique="true" uniqueConstraintName="uk_billing_payment_order"/>
+      </column>
+      <column name="user_id" type="UUID">
+        <constraints nullable="false"/>
+      </column>
+      <column name="plan_id" type="UUID">
+        <constraints nullable="false"/>
+      </column>
+      <column name="billing_period" type="VARCHAR(20)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="amount" type="BIGINT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="provider" type="VARCHAR(40)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="status" type="VARCHAR(20)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="provider_transaction_id" type="VARCHAR(100)"/>
+      <column name="provider_time" type="BIGINT"/>
+      <column name="paid_at" type="TIMESTAMP WITH TIME ZONE"/>
+      <column name="cancelled_at" type="TIMESTAMP WITH TIME ZONE"/>
+      <column name="cancel_reason" type="INT"/>
+      <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+        <constraints nullable="false"/>
+      </column>
+      <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+        <constraints nullable="false"/>
+      </column>
+      <column name="created_by" type="VARCHAR(200)"/>
+      <column name="updated_by" type="VARCHAR(200)"/>
+    </createTable>
+    <addForeignKeyConstraint baseTableName="billing_payment" baseColumnNames="user_id"
+      constraintName="fk_billing_payment_user"
+      referencedTableName="app_user" referencedColumnNames="id" onDelete="CASCADE"/>
+    <addForeignKeyConstraint baseTableName="billing_payment" baseColumnNames="plan_id"
+      constraintName="fk_billing_payment_plan"
+      referencedTableName="billing_plan" referencedColumnNames="id"/>
+    <createIndex tableName="billing_payment" indexName="idx_billing_payment_provider_tx">
+      <column name="provider"/>
+      <column name="provider_transaction_id"/>
+    </createIndex>
+    <createIndex tableName="billing_payment" indexName="idx_billing_payment_user">
+      <column name="user_id"/>
+      <column name="created_at"/>
+    </createIndex>
+  </changeSet>
+
+  <!-- Counters of METERED limits. period_start is the first day of the day/month, 1970-01-01 for lifetime. -->
+  <changeSet id="019-create-billing-usage-table" author="online-menu">
+    <createTable tableName="billing_usage">
+      <column name="user_id" type="UUID">
+        <constraints nullable="false"/>
+      </column>
+      <column name="metric_key" type="VARCHAR(64)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="period_start" type="DATE">
+        <constraints nullable="false"/>
+      </column>
+      <column name="used" type="BIGINT" defaultValueNumeric="0">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+    <addPrimaryKey tableName="billing_usage" columnNames="user_id, metric_key, period_start"
+      constraintName="pk_billing_usage"/>
+    <addForeignKeyConstraint baseTableName="billing_usage" baseColumnNames="user_id"
+      constraintName="fk_billing_usage_user"
+      referencedTableName="app_user" referencedColumnNames="id" onDelete="CASCADE"/>
+  </changeSet>
+
+  <changeSet id="019-seed-billing-limits" author="online-menu">
+    <sql splitStatements="true"><![CDATA[
+      INSERT INTO billing_limit_definition (id, limit_key, name_translations, kind, period, http_method, path_pattern, default_value, sort_order, built_in)
+      VALUES (gen_random_uuid(), 'cafes',
+              '{"uz": "Filiallar (kafelar)", "en": "Branches (cafes)", "ru": "Филиалы (кафе)"}'::jsonb,
+              'COUNT', 'NONE', NULL, NULL, -1, 10, true);
+      INSERT INTO billing_limit_definition (id, limit_key, name_translations, kind, period, http_method, path_pattern, default_value, sort_order, built_in)
+      VALUES (gen_random_uuid(), 'products',
+              '{"uz": "Menyudagi mahsulotlar", "en": "Menu items", "ru": "Позиции меню"}'::jsonb,
+              'COUNT', 'NONE', NULL, NULL, -1, 20, true);
+      INSERT INTO billing_limit_definition (id, limit_key, name_translations, kind, period, http_method, path_pattern, default_value, sort_order, built_in)
+      VALUES (gen_random_uuid(), 'discounts',
+              '{"uz": "Chegirmalar", "en": "Discounts", "ru": "Скидки"}'::jsonb,
+              'FEATURE', 'NONE', 'POST', '/api/v1/cafes/*/discounts', 1, 30, false);
+      INSERT INTO billing_limit_definition (id, limit_key, name_translations, kind, period, http_method, path_pattern, default_value, sort_order, built_in)
+      VALUES (gen_random_uuid(), 'ai.messages',
+              '{"uz": "AI yordamchi xabarlari", "en": "AI assistant messages", "ru": "Сообщения AI-ассистенту"}'::jsonb,
+              'METERED', 'MONTH', NULL, NULL, -1, 40, true);
+      INSERT INTO billing_limit_definition (id, limit_key, name_translations, kind, period, http_method, path_pattern, default_value, sort_order, built_in)
+      VALUES (gen_random_uuid(), 'ai.actions',
+              '{"uz": "AI bajargan amallar", "en": "Actions done by AI", "ru": "Действия AI"}'::jsonb,
+              'METERED', 'MONTH', NULL, NULL, -1, 50, true);
+    ]]></sql>
+  </changeSet>
+
+  <!-- Prices from the landing page (so'm per month; yearly = 12 months with 20% off). -->
+  <changeSet id="019-seed-billing-plans" author="online-menu">
+    <sql splitStatements="true"><![CDATA[
+      INSERT INTO billing_plan (id, slug, name_translations, description_translations, monthly_price, yearly_price, entitlements, sort_order, recommended, active)
+      VALUES (gen_random_uuid(), 'bepul',
+              '{"uz": "Bepul", "en": "Free", "ru": "Бесплатный"}'::jsonb,
+              '{"uz": "Sinov muddati tugagach amal qiladi", "en": "Applies after the trial ends", "ru": "Действует после окончания пробного периода"}'::jsonb,
+              0, 0,
+              '{"cafes": 1, "products": 30, "discounts": 0, "ai.messages": 0, "ai.actions": 0}'::jsonb,
+              0, false, false);
+      INSERT INTO billing_plan (id, slug, name_translations, description_translations, monthly_price, yearly_price, entitlements, sort_order, recommended, active)
+      VALUES (gen_random_uuid(), 'kichik',
+              '{"uz": "Kichik", "en": "Small", "ru": "Малый"}'::jsonb,
+              '{"uz": "1 nuqta", "en": "1 location", "ru": "1 точка"}'::jsonb,
+              290000, 2784000,
+              '{"cafes": 1, "products": 150, "discounts": 1, "ai.messages": 50, "ai.actions": 20}'::jsonb,
+              10, false, true);
+      INSERT INTO billing_plan (id, slug, name_translations, description_translations, monthly_price, yearly_price, entitlements, sort_order, recommended, active)
+      VALUES (gen_random_uuid(), 'orta',
+              '{"uz": "O''rta", "en": "Medium", "ru": "Средний"}'::jsonb,
+              '{"uz": "2-3 nuqta", "en": "2-3 locations", "ru": "2-3 точки"}'::jsonb,
+              590000, 5664000,
+              '{"cafes": 3, "products": 500, "discounts": 1, "ai.messages": 300, "ai.actions": 150}'::jsonb,
+              20, true, true);
+      INSERT INTO billing_plan (id, slug, name_translations, description_translations, monthly_price, yearly_price, entitlements, sort_order, recommended, active)
+      VALUES (gen_random_uuid(), 'katta',
+              '{"uz": "Katta", "en": "Large", "ru": "Крупный"}'::jsonb,
+              '{"uz": "4-10 nuqta", "en": "4-10 locations", "ru": "4-10 точек"}'::jsonb,
+              890000, 8544000,
+              '{"cafes": 10, "products": -1, "discounts": 1, "ai.messages": 1000, "ai.actions": 500}'::jsonb,
+              30, false, true);
+      INSERT INTO billing_plan (id, slug, name_translations, description_translations, monthly_price, yearly_price, entitlements, sort_order, recommended, active)
+      VALUES (gen_random_uuid(), 'tarmoq',
+              '{"uz": "Tarmoq", "en": "Chain", "ru": "Сеть"}'::jsonb,
+              '{"uz": "10+ filial", "en": "10+ branches", "ru": "10+ филиалов"}'::jsonb,
+              1290000, 12384000,
+              '{"cafes": -1, "products": -1, "discounts": 1, "ai.messages": -1, "ai.actions": -1}'::jsonb,
+              40, false, true);
+    ]]></sql>
+  </changeSet>
+
+  <!-- The cafe limit now comes from the plan. -->
+  <changeSet id="019-billing-settings" author="online-menu">
+    <delete tableName="app_setting">
+      <where>setting_key = 'cafe.max_per_user'</where>
+    </delete>
+    <insert tableName="app_setting">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="setting_key" value="billing.enabled"/>
+      <column name="setting_value" value="true"/>
+      <column name="value_type" value="BOOLEAN"/>
+      <column name="description" value="Plan limits on/off. Off: nobody is limited"/>
+    </insert>
+    <insert tableName="app_setting">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="setting_key" value="billing.trial_days"/>
+      <column name="setting_value" value="14"/>
+      <column name="value_type" value="INTEGER"/>
+      <column name="description" value="Free trial length for new cafe admins (0 = no trial)"/>
+    </insert>
+    <insert tableName="app_setting">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="setting_key" value="billing.trial_plan"/>
+      <column name="setting_value" value="orta"/>
+      <column name="value_type" value="STRING"/>
+      <column name="description" value="Slug of the plan given during the free trial"/>
+    </insert>
+    <insert tableName="app_setting">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="setting_key" value="billing.fallback_plan"/>
+      <column name="setting_value" value="bepul"/>
+      <column name="value_type" value="STRING"/>
+      <column name="description" value="Slug of the plan that applies when there is no paid or trial period"/>
+    </insert>
+    <insert tableName="app_setting">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="setting_key" value="billing.upgrade_prompt_percent"/>
+      <column name="setting_value" value="80"/>
+      <column name="value_type" value="INTEGER"/>
+      <column name="description" value="Usage percent of a limit at which the panel suggests a bigger plan"/>
+    </insert>
+    <insert tableName="app_setting">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="setting_key" value="payment.payme.enabled"/>
+      <column name="setting_value" value="true"/>
+      <column name="value_type" value="BOOLEAN"/>
+      <column name="description" value="Offer Payme at checkout (keys come from the server environment)"/>
+    </insert>
+    <insert tableName="app_setting">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="setting_key" value="payment.click.enabled"/>
+      <column name="setting_value" value="true"/>
+      <column name="value_type" value="BOOLEAN"/>
+      <column name="description" value="Offer Click at checkout (keys come from the server environment)"/>
+    </insert>
+    <insert tableName="app_setting">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="setting_key" value="payment.uzum.enabled"/>
+      <column name="setting_value" value="true"/>
+      <column name="value_type" value="BOOLEAN"/>
+      <column name="description" value="Offer Uzum Bank at checkout (keys come from the server environment)"/>
+    </insert>
+  </changeSet>
+
+  <changeSet id="019-seed-billing-messages" author="online-menu">
+    <sql splitStatements="true"><![CDATA[
+      INSERT INTO system_message (id, code, translations) VALUES
+      (gen_random_uuid(), 'error.billing.limit_reached',
+       '{"uz": "Tarifingiz limitiga yetdingiz: %s — %s. Davom etish uchun tarifni yangilang", "en": "Your plan limit is reached: %s — %s. Upgrade your plan to continue", "ru": "Достигнут лимит тарифа: %s — %s. Чтобы продолжить, повысьте тариф"}'::jsonb),
+      (gen_random_uuid(), 'error.billing.feature_unavailable',
+       '{"uz": "«%s» joriy tarifingizda mavjud emas. Tarifni yangilang", "en": "“%s” is not included in your plan. Upgrade your plan", "ru": "«%s» не входит в ваш тариф. Повысьте тариф"}'::jsonb),
+      (gen_random_uuid(), 'error.billing.plan_not_found',
+       '{"uz": "Tarif topilmadi", "en": "Plan not found", "ru": "Тариф не найден"}'::jsonb),
+      (gen_random_uuid(), 'error.billing.plan_in_use',
+       '{"uz": "Bu tarifdan foydalanilmoqda — o''chirish o''rniga uni nofaol qiling", "en": "This plan is in use — deactivate it instead of deleting", "ru": "Тариф используется — отключите его вместо удаления"}'::jsonb),
+      (gen_random_uuid(), 'error.billing.plan_not_available',
+       '{"uz": "Bu tarifni sotib olib bo''lmaydi", "en": "This plan cannot be purchased", "ru": "Этот тариф нельзя купить"}'::jsonb),
+      (gen_random_uuid(), 'error.billing.limit_not_found',
+       '{"uz": "Cheklov topilmadi", "en": "Limit not found", "ru": "Ограничение не найдено"}'::jsonb),
+      (gen_random_uuid(), 'error.billing.limit_key_exists',
+       '{"uz": "Bunday kalitli cheklov allaqachon mavjud", "en": "A limit with this key already exists", "ru": "Ограничение с таким ключом уже существует"}'::jsonb),
+      (gen_random_uuid(), 'error.billing.limit_invalid',
+       '{"uz": "Cheklov noto''g''ri: %s", "en": "Invalid limit: %s", "ru": "Некорректное ограничение: %s"}'::jsonb),
+      (gen_random_uuid(), 'error.billing.limit_system',
+       '{"uz": "Tizim cheklovini o''chirib bo''lmaydi", "en": "A built-in limit cannot be deleted", "ru": "Встроенное ограничение нельзя удалить"}'::jsonb),
+      (gen_random_uuid(), 'error.billing.provider_unavailable',
+       '{"uz": "Bu to''lov usuli hozir mavjud emas", "en": "This payment method is not available now", "ru": "Этот способ оплаты сейчас недоступен"}'::jsonb),
+      (gen_random_uuid(), 'error.billing.payment_not_found',
+       '{"uz": "To''lov topilmadi", "en": "Payment not found", "ru": "Платёж не найден"}'::jsonb);
+    ]]></sql>
+  </changeSet>
+
+</databaseChangeLog>

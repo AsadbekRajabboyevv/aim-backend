@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+  <changeSet id="017-ai-tool-descriptions-autofill" author="online-menu">
+    <sql splitStatements="true"><![CDATA[
+      UPDATE ai_tool
+      SET description =
+            'Add ONE dish or drink to a cafe menu (call it once per item; several calls in one turn are fine). Fill every field yourself: nameTranslations in uz, ru and en; price as a plain number in so''m (15ming = 15000); portion as the user wrote the size or amount (1.5 l, 1 tarelka, 330 ml); categorySlug of the best-fitting category from list_categories. If no category fits, create one with create_category first and use the slug it returns.'
+      WHERE name = 'create_product'
+        AND description LIKE 'Add a dish or drink to a cafe menu. Fill in what the user said%';
+
+      UPDATE ai_tool
+      SET description =
+            'Add a menu category to a cafe, e.g. when none of the existing categories fits a new dish ("Alkogolli ichimliklar", "Salatlar"). Give the name in uz, ru and en. The result contains the new category''s slug to use in create_product.'
+      WHERE name = 'create_category'
+        AND description = 'Add a menu category to a cafe. The user confirms in a form.';
+
+      UPDATE ai_tool
+      SET description =
+            'Mark a dish as sold out (available=false) or back in stock (available=true). Find the product slug with list_products first.'
+      WHERE name = 'set_product_availability'
+        AND description LIKE 'Mark a dish as sold out%The user confirms in a form.';
+
+      UPDATE ai_tool
+      SET description =
+            'List the cafes owned by the current user (slug, names in each language, contacts, active flag). Use it to find the cafe the user names, even loosely (e.g. "Kofe uyi"), and its cafeSlug.'
+      WHERE name = 'list_my_cafes'
+        AND description LIKE 'List the cafes owned by the current user%Call this first%';
+
+      UPDATE ai_tool
+      SET description =
+            'Search all cafes on the platform (paged) by slug, phone or address. Slugs are the latinised name joined with dashes, so search with one distinctive word of the name (for "Kofe uyi" search "kofe"), then pick the match by its nameTranslations.'
+      WHERE name = 'search_cafes'
+        AND description LIKE
+            'Search all cafes on the platform (paged). Matches slug, phone or address.%';
+      ]]></sql>
+  </changeSet>
+
+</databaseChangeLog>

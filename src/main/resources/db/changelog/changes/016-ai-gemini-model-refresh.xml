@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+  <changeSet id="016-gemini-default-models" author="online-menu">
+    <sql splitStatements="true"><![CDATA[
+      UPDATE app_setting
+      SET setting_value = 'gemini-3.6-flash'
+      WHERE setting_key = 'ai.gemini.model'
+        AND setting_value = 'gemini-2.5-flash';
+
+      UPDATE app_setting
+      SET setting_value = 'gemini-3.6-flash'
+      WHERE setting_key = 'ai.gemini.title_model'
+        AND setting_value IN ('gemini-2.5-flash-lite', 'gemini-2.5-flash');
+      ]]></sql>
+  </changeSet>
+
+  <changeSet id="016-seed-ai-error-messages" author="online-menu">
+    <insert tableName="system_message">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="code" value="error.ai.model_unavailable"/>
+      <column name="translations"
+        value='{"uz": "AI modeli (%s) mavjud emas. Super admin AI sozlamalarida boshqa modelni tanlashi kerak", "en": "The AI model (%s) is not available. A super admin needs to pick another model in AI settings", "ru": "AI-модель (%s) недоступна. Супер-админ должен выбрать другую модель в настройках AI"}'/>
+    </insert>
+    <insert tableName="system_message">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="code" value="error.ai.provider_busy"/>
+      <column name="translations"
+        value='{"uz": "AI xizmati hozir juda band. Birozdan so&apos;ng qayta urinib ko&apos;ring", "en": "The AI service is very busy right now. Please try again shortly", "ru": "AI-сервис сейчас перегружен. Попробуйте чуть позже"}'/>
+    </insert>
+  </changeSet>
+
+</databaseChangeLog>

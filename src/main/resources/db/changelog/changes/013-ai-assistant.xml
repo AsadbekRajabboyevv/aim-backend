@@ -1,0 +1,330 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+  <changeSet id="013-create-ai-tool-table" author="online-menu">
+    <createTable tableName="ai_tool">
+      <column name="id" type="UUID">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="name" type="VARCHAR(64)">
+        <constraints nullable="false" unique="true" uniqueConstraintName="uk_ai_tool_name"/>
+      </column>
+      <column name="title" type="VARCHAR(150)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="description" type="TEXT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="http_method" type="VARCHAR(10)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="path_template" type="VARCHAR(300)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="input_schema" type="JSONB">
+        <constraints nullable="false"/>
+      </column>
+      <column name="requires_confirmation" type="BOOLEAN" defaultValueBoolean="false">
+        <constraints nullable="false"/>
+      </column>
+      <column name="allowed_roles" type="JSONB">
+        <constraints nullable="false"/>
+      </column>
+      <column name="active" type="BOOLEAN" defaultValueBoolean="true">
+        <constraints nullable="false"/>
+      </column>
+      <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+        <constraints nullable="false"/>
+      </column>
+      <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+        <constraints nullable="false"/>
+      </column>
+      <column name="created_by" type="VARCHAR(200)"/>
+      <column name="updated_by" type="VARCHAR(200)"/>
+    </createTable>
+  </changeSet>
+
+  <!-- Chat history. Deleting a user deletes their conversations; deleting a conversation deletes its turns. -->
+  <changeSet id="013-create-ai-conversation-tables" author="online-menu">
+    <createTable tableName="ai_conversation">
+      <column name="id" type="UUID">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="slug" type="VARCHAR(180)">
+        <constraints nullable="false" unique="true" uniqueConstraintName="uk_ai_conversation_slug"/>
+      </column>
+      <column name="owner_id" type="UUID">
+        <constraints nullable="false"/>
+      </column>
+      <column name="title" type="VARCHAR(200)"/>
+      <column name="archived" type="BOOLEAN" defaultValueBoolean="false">
+        <constraints nullable="false"/>
+      </column>
+      <column name="last_message_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+        <constraints nullable="false"/>
+      </column>
+      <column name="pending_results" type="JSONB" defaultValueComputed="'[]'::jsonb">
+        <constraints nullable="false"/>
+      </column>
+      <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+        <constraints nullable="false"/>
+      </column>
+      <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+        <constraints nullable="false"/>
+      </column>
+      <column name="created_by" type="VARCHAR(200)"/>
+      <column name="updated_by" type="VARCHAR(200)"/>
+    </createTable>
+    <addForeignKeyConstraint baseTableName="ai_conversation" baseColumnNames="owner_id"
+      constraintName="fk_ai_conversation_owner"
+      referencedTableName="app_user" referencedColumnNames="id"
+      onDelete="CASCADE"/>
+    <createIndex tableName="ai_conversation" indexName="idx_ai_conversation_owner_recent">
+      <column name="owner_id"/>
+      <column name="archived"/>
+      <column name="last_message_at"/>
+    </createIndex>
+
+    <createTable tableName="ai_message">
+      <column name="id" type="UUID">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="conversation_id" type="UUID">
+        <constraints nullable="false"/>
+      </column>
+      <column name="seq" type="INT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="content" type="JSONB">
+        <constraints nullable="false"/>
+      </column>
+      <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+        <constraints nullable="false"/>
+      </column>
+      <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+        <constraints nullable="false"/>
+      </column>
+      <column name="created_by" type="VARCHAR(200)"/>
+      <column name="updated_by" type="VARCHAR(200)"/>
+    </createTable>
+    <addForeignKeyConstraint baseTableName="ai_message" baseColumnNames="conversation_id"
+      constraintName="fk_ai_message_conversation"
+      referencedTableName="ai_conversation" referencedColumnNames="id"
+      onDelete="CASCADE"/>
+    <addUniqueConstraint tableName="ai_message" columnNames="conversation_id, seq"
+      constraintName="uk_ai_message_conversation_seq"/>
+  </changeSet>
+
+  <changeSet id="013-seed-ai-settings" author="online-menu">
+    <insert tableName="app_setting">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="setting_key" value="ai.enabled"/>
+      <column name="setting_value" value="true"/>
+      <column name="value_type" value="BOOLEAN"/>
+      <column name="description" value="AI assistant chat on/off for everyone"/>
+    </insert>
+    <insert tableName="app_setting">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="setting_key" value="ai.provider"/>
+      <column name="setting_value" value="openai"/>
+      <column name="value_type" value="STRING"/>
+      <column name="description"
+        value="AI vendor adapter id (openai; claude / gemini once their adapters are added). Its API key comes from the server environment"/>
+    </insert>
+    <insert tableName="app_setting">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="setting_key" value="ai.model"/>
+      <column name="setting_value" value="gpt-4.1-mini"/>
+      <column name="value_type" value="STRING"/>
+      <column name="description"
+        value="Model name of the active AI vendor used by the assistant chat"/>
+    </insert>
+    <insert tableName="app_setting">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="setting_key" value="ai.title_model"/>
+      <column name="setting_value" value="gpt-4.1-mini"/>
+      <column name="value_type" value="STRING"/>
+      <column name="description"
+        value="Model used to name chat conversations (a cheaper model is fine)"/>
+    </insert>
+  </changeSet>
+
+  <changeSet id="013-seed-ai-messages" author="online-menu">
+    <insert tableName="system_message">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="code" value="error.ai.disabled"/>
+      <column name="translations"
+        value='{"uz": "AI yordamchi hozircha o&apos;chirilgan", "en": "The AI assistant is currently turned off", "ru": "AI-ассистент сейчас отключён"}'/>
+    </insert>
+    <insert tableName="system_message">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="code" value="error.ai.not_configured"/>
+      <column name="translations"
+        value='{"uz": "AI yordamchi sozlanmagan. Administratorga murojaat qiling", "en": "The AI assistant is not configured. Contact the administrator", "ru": "AI-ассистент не настроен. Обратитесь к администратору"}'/>
+    </insert>
+    <insert tableName="system_message">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="code" value="error.ai.provider_failed"/>
+      <column name="translations"
+        value='{"uz": "AI xizmati javob bermadi. Birozdan keyin qayta urinib ko&apos;ring", "en": "The AI service did not respond. Please try again shortly", "ru": "AI-сервис не ответил. Попробуйте ещё раз чуть позже"}'/>
+    </insert>
+    <insert tableName="system_message">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="code" value="error.ai.conversation_not_found"/>
+      <column name="translations"
+        value='{"uz": "Suhbat topilmadi", "en": "Conversation not found", "ru": "Диалог не найден"}'/>
+    </insert>
+    <insert tableName="system_message">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="code" value="error.ai.action_not_pending"/>
+      <column name="translations"
+        value='{"uz": "Bu amal allaqachon hal qilingan", "en": "This action has already been answered", "ru": "Это действие уже обработано"}'/>
+    </insert>
+    <insert tableName="system_message">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="code" value="error.ai.tool_not_found"/>
+      <column name="translations"
+        value='{"uz": "AI vositasi topilmadi", "en": "AI tool not found", "ru": "AI-инструмент не найден"}'/>
+    </insert>
+    <insert tableName="system_message">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="code" value="error.ai.tool_name_exists"/>
+      <column name="translations"
+        value='{"uz": "Bunday nomli AI vositasi allaqachon mavjud", "en": "An AI tool with this name already exists", "ru": "AI-инструмент с таким именем уже существует"}'/>
+    </insert>
+    <insert tableName="system_message">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="code" value="error.ai.tool_invalid"/>
+      <column name="translations"
+        value='{"uz": "AI vositasi noto&apos;g&apos;ri: %s", "en": "Invalid AI tool: %s", "ru": "Некорректный AI-инструмент: %s"}'/>
+    </insert>
+  </changeSet>
+
+  <!--
+      Starter tools. Descriptions are for the model (English); titles are shown to users. The x-* keys
+      are form hints for the chat (see AiToolSchemas) and are never sent to the model.
+  -->
+  <changeSet id="013-seed-ai-tools" author="online-menu">
+    <sql splitStatements="true"><![CDATA[
+      INSERT INTO ai_tool (id, name, title, description, http_method, path_template, input_schema,
+                           requires_confirmation, allowed_roles, active)
+      VALUES (gen_random_uuid(), 'list_my_cafes', 'Kafelarim',
+              'List the cafes owned by the current user (slug, names in each language, contacts, active flag). Call this first to find the cafeSlug other tools need.',
+              'GET', '/api/v1/cafes/my',
+              $json${"type": "object", "properties": {}}$json$::jsonb,
+              false, '["CAFE_ADMIN"]'::jsonb, true);
+
+      INSERT INTO ai_tool (id, name, title, description, http_method, path_template, input_schema,
+                           requires_confirmation, allowed_roles, active)
+      VALUES (gen_random_uuid(), 'search_cafes', 'Kafelarni qidirish',
+              'Search all cafes on the platform (paged). Matches slug, phone or address. Use it to find a cafeSlug.',
+              'GET', '/api/v1/cafes',
+              $json${"type": "object", "properties": {
+   "search": {"type": "string", "description": "Part of the cafe slug, phone or address"},
+              "page": {"type": "integer", "minimum": 0, "description": "Page number, 0-based"},
+              "size": {"type": "integer", "minimum": 1, "maximum": 100, "description": "Page size"}
+ }}$json$::jsonb,
+              false, '["SUPER_ADMIN"]'::jsonb, true);
+
+      INSERT INTO ai_tool (id, name, title, description, http_method, path_template, input_schema,
+                           requires_confirmation, allowed_roles, active)
+      VALUES (gen_random_uuid(), 'list_categories', 'Kategoriyalar',
+              'List the menu categories of a cafe in display order (slug, names, active, product count).',
+              'GET', '/api/v1/cafes/{cafeSlug}/categories',
+              $json${"type": "object", "properties": {
+   "cafeSlug": {"type": "string", "description": "Cafe slug"}
+ }, "required": ["cafeSlug"]}$json$::jsonb,
+              false, '["CAFE_ADMIN", "SUPER_ADMIN"]'::jsonb, true);
+
+      INSERT INTO ai_tool (id, name, title, description, http_method, path_template, input_schema,
+                           requires_confirmation, allowed_roles, active)
+      VALUES (gen_random_uuid(), 'list_products', 'Taomlar',
+              'List the dishes of a cafe, optionally only one category: slug, category, names, price, running discount price, portion, badges, shown on menu (active), in stock (available).',
+              'GET', '/api/v1/cafes/{cafeSlug}/products',
+              $json${"type": "object", "properties": {
+   "cafeSlug": {"type": "string", "description": "Cafe slug"},
+              "categorySlug": {"type": "string", "description": "Optional category slug to filter by"}
+ }, "required": ["cafeSlug"]}$json$::jsonb,
+              false, '["CAFE_ADMIN", "SUPER_ADMIN"]'::jsonb, true);
+
+      INSERT INTO ai_tool (id, name, title, description, http_method, path_template, input_schema,
+                           requires_confirmation, allowed_roles, active)
+      VALUES (gen_random_uuid(), 'create_category', 'Kategoriya qo''shish',
+              'Add a menu category to a cafe. The user confirms in a form.',
+              'POST', '/api/v1/cafes/{cafeSlug}/categories',
+              $json${"type": "object", "properties": {
+   "cafeSlug": {"type": "string", "title": "Kafe", "description": "Cafe slug",
+              "x-options": {"path": "/api/v1/cafes/my", "items": "data.cafes", "value": "slug",
+              "label": "nameTranslations.uz"}},
+              "nameTranslations": {"type": "object", "title": "Nomi",
+              "description": "Category name per language code",
+              "properties": {
+       "uz": {"type": "string", "title": "O'zbekcha"},
+              "ru": {"type": "string", "title": "Ruscha"},
+              "en": {"type": "string", "title": "Inglizcha"}
+     }, "required": ["uz"]},
+              "active": {"type": "boolean", "title": "Menyuda ko'rsatish", "default": true}
+ }, "required": ["cafeSlug", "nameTranslations"]}$json$::jsonb,
+              true, '["CAFE_ADMIN", "SUPER_ADMIN"]'::jsonb, true);
+
+      INSERT INTO ai_tool (id, name, title, description, http_method, path_template, input_schema,
+                           requires_confirmation, allowed_roles, active)
+      VALUES (gen_random_uuid(), 'create_product', 'Taom qo''shish',
+              'Add a dish or drink to a cafe menu. Fill in what the user said (name, price, portion, category...) and leave the rest out; the user completes and confirms it in a form. Translate the name into ru and en yourself when you can.',
+              'POST', '/api/v1/cafes/{cafeSlug}/products',
+              $json${"type": "object", "properties": {
+   "cafeSlug": {"type": "string", "title": "Kafe", "description": "Cafe slug",
+              "x-options": {"path": "/api/v1/cafes/my", "items": "data.cafes", "value": "slug",
+              "label": "nameTranslations.uz"}},
+              "categorySlug": {"type": "string", "title": "Kategoriya",
+              "description": "Category slug in that cafe",
+              "x-options": {"path": "/api/v1/cafes/{cafeSlug}/categories", "value": "slug",
+              "label": "nameTranslations.uz"}},
+              "nameTranslations": {"type": "object", "title": "Nomi",
+              "description": "Dish name per language code",
+              "properties": {
+       "uz": {"type": "string", "title": "O'zbekcha"},
+              "ru": {"type": "string", "title": "Ruscha"},
+              "en": {"type": "string", "title": "Inglizcha"}
+     }, "required": ["uz"]},
+              "price": {"type": "number", "title": "Narxi (so'm)", "minimum": 0},
+              "portion": {"type": "string", "title": "Porsiya",
+              "description": "Free text such as 0.5 l, 330 ml or 300 g", "maxLength": 50},
+              "descriptionTranslations": {"type": "object", "title": "Tavsif",
+              "description": "Short description per language code",
+              "properties": {
+       "uz": {"type": "string", "title": "O'zbekcha", "x-multiline": true},
+              "ru": {"type": "string", "title": "Ruscha", "x-multiline": true},
+              "en": {"type": "string", "title": "Inglizcha", "x-multiline": true}
+     }},
+              "tags": {"type": "array", "title": "Belgilar", "description": "Menu badges",
+              "items": {"type": "string", "enum": ["NEW", "HIT", "SPICY"]},
+              "x-enum-labels": {"NEW": "Yangi", "HIT": "Hit", "SPICY": "Achchiq"}},
+              "available": {"type": "boolean", "title": "Mavjud", "default": true},
+              "active": {"type": "boolean", "title": "Menyuda ko'rsatish", "default": true}
+ }, "required": ["cafeSlug", "categorySlug", "nameTranslations", "price"]}$json$::jsonb,
+              true, '["CAFE_ADMIN", "SUPER_ADMIN"]'::jsonb, true);
+
+      INSERT INTO ai_tool (id, name, title, description, http_method, path_template, input_schema,
+                           requires_confirmation, allowed_roles, active)
+      VALUES (gen_random_uuid(), 'set_product_availability', 'Mavjudlikni o''zgartirish',
+              'Mark a dish as sold out (available=false) or back in stock (available=true). Find the product slug with list_products first. The user confirms in a form.',
+              'PATCH', '/api/v1/cafes/{cafeSlug}/products/{slug}/availability',
+              $json${"type": "object", "properties": {
+   "cafeSlug": {"type": "string", "title": "Kafe", "description": "Cafe slug",
+              "x-options": {"path": "/api/v1/cafes/my", "items": "data.cafes", "value": "slug",
+              "label": "nameTranslations.uz"}},
+              "slug": {"type": "string", "title": "Taom", "description": "Product slug",
+              "x-options": {"path": "/api/v1/cafes/{cafeSlug}/products", "value": "slug",
+              "label": "nameTranslations.uz"}},
+              "available": {"type": "boolean", "title": "Mavjud", "description": "false = sold out"}
+ }, "required": ["cafeSlug", "slug", "available"]}$json$::jsonb,
+              true, '["CAFE_ADMIN", "SUPER_ADMIN"]'::jsonb, true);
+      ]]></sql>
+  </changeSet>
+
+</databaseChangeLog>

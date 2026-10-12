@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+  <changeSet id="014-ai-tool-schema-as-text" author="online-menu">
+    <sql>ALTER TABLE ai_tool ALTER COLUMN input_schema TYPE TEXT USING input_schema::text</sql>
+  </changeSet>
+
+  <changeSet id="014-reorder-starter-tool-schemas" author="online-menu">
+    <sql splitStatements="true"><![CDATA[
+      UPDATE ai_tool
+      SET input_schema = $json${"type": "object", "properties": {
+  "search": {"type": "string", "description": "Part of the cafe slug, phone or address"},
+  "page": {"type": "integer", "minimum": 0, "description": "Page number, 0-based"},
+  "size": {"type": "integer", "minimum": 1, "maximum": 100, "description": "Page size"}
+}}$json$
+      WHERE name = 'search_cafes';
+
+      UPDATE ai_tool
+      SET input_schema = $json${"type": "object", "properties": {
+  "cafeSlug": {"type": "string", "description": "Cafe slug"},
+  "categorySlug": {"type": "string", "description": "Optional category slug to filter by"}
+}, "required": ["cafeSlug"]}$json$
+      WHERE name = 'list_products';
+
+      UPDATE ai_tool
+      SET input_schema = $json${"type": "object", "properties": {
+  "cafeSlug": {"type": "string", "title": "Kafe", "description": "Cafe slug",
+    "x-options": {"path": "/api/v1/cafes/my", "items": "data.cafes", "value": "slug", "label": "nameTranslations.uz"}},
+  "nameTranslations": {"type": "object", "title": "Nomi", "description": "Category name per language code",
+    "properties": {
+      "uz": {"type": "string", "title": "O'zbekcha"},
+      "ru": {"type": "string", "title": "Ruscha"},
+      "en": {"type": "string", "title": "Inglizcha"}
+    }, "required": ["uz"]},
+  "active": {"type": "boolean", "title": "Menyuda ko'rsatish", "default": true}
+}, "required": ["cafeSlug", "nameTranslations"]}$json$
+      WHERE name = 'create_category';
+
+      UPDATE ai_tool
+      SET input_schema = $json${"type": "object", "properties": {
+  "cafeSlug": {"type": "string", "title": "Kafe", "description": "Cafe slug",
+    "x-options": {"path": "/api/v1/cafes/my", "items": "data.cafes", "value": "slug", "label": "nameTranslations.uz"}},
+  "categorySlug": {"type": "string", "title": "Kategoriya", "description": "Category slug in that cafe",
+    "x-options": {"path": "/api/v1/cafes/{cafeSlug}/categories", "value": "slug", "label": "nameTranslations.uz"}},
+  "nameTranslations": {"type": "object", "title": "Nomi", "description": "Dish name per language code",
+    "properties": {
+      "uz": {"type": "string", "title": "O'zbekcha"},
+      "ru": {"type": "string", "title": "Ruscha"},
+      "en": {"type": "string", "title": "Inglizcha"}
+    }, "required": ["uz"]},
+  "price": {"type": "number", "title": "Narxi (so'm)", "minimum": 0},
+  "portion": {"type": "string", "title": "Porsiya", "description": "Free text such as 0.5 l, 330 ml or 300 g", "maxLength": 50,
+    "x-hint": "Masalan: 0.5 l, 330 ml, 300 g"},
+  "descriptionTranslations": {"type": "object", "title": "Tavsif", "description": "Short description per language code",
+    "properties": {
+      "uz": {"type": "string", "title": "O'zbekcha", "x-multiline": true},
+      "ru": {"type": "string", "title": "Ruscha", "x-multiline": true},
+      "en": {"type": "string", "title": "Inglizcha", "x-multiline": true}
+    }},
+  "tags": {"type": "array", "title": "Belgilar", "description": "Menu badges",
+    "items": {"type": "string", "enum": ["NEW", "HIT", "SPICY"]},
+    "x-enum-labels": {"NEW": "Yangi", "HIT": "Hit", "SPICY": "Achchiq"}},
+  "available": {"type": "boolean", "title": "Mavjud", "default": true},
+  "active": {"type": "boolean", "title": "Menyuda ko'rsatish", "default": true}
+}, "required": ["cafeSlug", "categorySlug", "nameTranslations", "price"]}$json$
+      WHERE name = 'create_product';
+
+      UPDATE ai_tool
+      SET input_schema = $json${"type": "object", "properties": {
+  "cafeSlug": {"type": "string", "title": "Kafe", "description": "Cafe slug",
+    "x-options": {"path": "/api/v1/cafes/my", "items": "data.cafes", "value": "slug", "label": "nameTranslations.uz"}},
+  "slug": {"type": "string", "title": "Taom", "description": "Product slug",
+    "x-options": {"path": "/api/v1/cafes/{cafeSlug}/products", "value": "slug", "label": "nameTranslations.uz"}},
+  "available": {"type": "boolean", "title": "Mavjud", "description": "false = sold out"}
+}, "required": ["cafeSlug", "slug", "available"]}$json$
+      WHERE name = 'set_product_availability';
+      ]]></sql>
+  </changeSet>
+
+</databaseChangeLog>

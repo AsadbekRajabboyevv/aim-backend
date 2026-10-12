@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+  <changeSet id="006-seed-languages" author="online-menu">
+    <insert tableName="language">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="code" value="uz"/>
+      <column name="name" value="Uzbek"/>
+      <column name="native_name" value="O&apos;zbekcha"/>
+      <column name="is_default" valueBoolean="true"/>
+      <column name="is_active" valueBoolean="true"/>
+      <column name="sort_order" valueNumeric="1"/>
+    </insert>
+    <insert tableName="language">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="code" value="en"/>
+      <column name="name" value="English"/>
+      <column name="native_name" value="English"/>
+      <column name="is_default" valueBoolean="false"/>
+      <column name="is_active" valueBoolean="true"/>
+      <column name="sort_order" valueNumeric="2"/>
+    </insert>
+    <insert tableName="language">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="code" value="ru"/>
+      <column name="name" value="Russian"/>
+      <column name="native_name" value="Русский"/>
+      <column name="is_default" valueBoolean="false"/>
+      <column name="is_active" valueBoolean="true"/>
+      <column name="sort_order" valueNumeric="3"/>
+    </insert>
+  </changeSet>
+
+  <changeSet id="006-seed-system-messages" author="online-menu">
+    <insert tableName="system_message">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="code" value="error.generic"/>
+      <column name="translations"
+        value='{"uz": "Kutilmagan xatolik yuz berdi", "en": "An unexpected error occurred", "ru": "Произошла непредвиденная ошибка"}'/>
+    </insert>
+    <insert tableName="system_message">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="code" value="error.validation.failed"/>
+      <column name="translations"
+        value='{"uz": "Kiritilgan malumotlar notogri", "en": "Validation failed", "ru": "Ошибка валидации"}'/>
+    </insert>
+    <insert tableName="system_message">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="code" value="error.auth.invalid_credentials"/>
+      <column name="translations"
+        value='{"uz": "Login yoki parol noto&apos;g&apos;ri", "en": "Invalid email or password", "ru": "Неверный логин или пароль"}'/>
+    </insert>
+    <insert tableName="system_message">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="code" value="error.auth.access_denied"/>
+      <column name="translations"
+        value='{"uz": "Ruxsat berilmagan", "en": "Access denied", "ru": "Доступ запрещён"}'/>
+    </insert>
+    <insert tableName="system_message">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="code" value="error.user.not_found"/>
+      <column name="translations"
+        value='{"uz": "Foydalanuvchi topilmadi", "en": "User not found", "ru": "Пользователь не найден"}'/>
+    </insert>
+    <insert tableName="system_message">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="code" value="error.user.email_exists"/>
+      <column name="translations"
+        value='{"uz": "Bu email allaqachon ro&apos;yxatdan o&apos;tgan", "en": "This email is already registered", "ru": "Этот email уже зарегистрирован"}'/>
+    </insert>
+    <insert tableName="system_message">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="code" value="error.cafe.not_found"/>
+      <column name="translations"
+        value='{"uz": "Kafe topilmadi", "en": "Cafe not found", "ru": "Кафе не найдено"}'/>
+    </insert>
+  </changeSet>
+
+  <changeSet id="006-seed-super-admin" author="online-menu">
+    <!--
+        Default bootstrap account: super-admin@onlinemenu.local / ChangeMe123!
+        Change this password immediately after first login.
+    -->
+    <insert tableName="app_user">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="slug" value="super-admin"/>
+      <column name="full_name" value="Super Admin"/>
+      <column name="email" value="super-admin@onlinemenu.local"/>
+      <column name="password" value="$2a$10$qlx/23iDxMTKBSG9QK4npuuh9//EouUz2kqNQnfpFJZ6kVBLD91ee"/>
+      <column name="role" value="SUPER_ADMIN"/>
+      <column name="provider" value="LOCAL"/>
+      <column name="active" valueBoolean="true"/>
+    </insert>
+  </changeSet>
+
+</databaseChangeLog>

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+  <changeSet id="001-create-language-table" author="online-menu">
+    <createTable tableName="language">
+      <column name="id" type="UUID">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="code" type="VARCHAR(10)">
+        <constraints nullable="false" unique="true" uniqueConstraintName="uk_language_code"/>
+      </column>
+      <column name="name" type="VARCHAR(100)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="native_name" type="VARCHAR(100)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="is_default" type="BOOLEAN" defaultValueBoolean="false">
+        <constraints nullable="false"/>
+      </column>
+      <column name="is_active" type="BOOLEAN" defaultValueBoolean="true">
+        <constraints nullable="false"/>
+      </column>
+      <column name="sort_order" type="INT" defaultValueNumeric="0">
+        <constraints nullable="false"/>
+      </column>
+      <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+        <constraints nullable="false"/>
+      </column>
+      <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+        <constraints nullable="false"/>
+      </column>
+      <column name="created_by" type="VARCHAR(200)"/>
+      <column name="updated_by" type="VARCHAR(200)"/>
+    </createTable>
+  </changeSet>
+
+</databaseChangeLog>

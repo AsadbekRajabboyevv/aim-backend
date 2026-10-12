@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+  <changeSet id="015-per-provider-ai-models" author="online-menu">
+    <sql splitStatements="true"><![CDATA[
+      INSERT INTO app_setting (id, setting_key, setting_value, value_type, description)
+      SELECT gen_random_uuid(),
+             'ai.openai.model',
+             setting_value,
+             'STRING',
+             'OpenAI model used by the assistant chat'
+      FROM app_setting
+      WHERE setting_key = 'ai.model';
+
+      INSERT INTO app_setting (id, setting_key, setting_value, value_type, description)
+      SELECT gen_random_uuid(),
+             'ai.openai.title_model',
+             setting_value,
+             'STRING',
+             'OpenAI model used to name chat conversations'
+      FROM app_setting
+      WHERE setting_key = 'ai.title_model';
+
+      INSERT INTO app_setting (id, setting_key, setting_value, value_type, description)
+      VALUES (gen_random_uuid(), 'ai.gemini.model', 'gemini-2.5-flash', 'STRING',
+              'Google Gemini model used by the assistant chat');
+
+      INSERT INTO app_setting (id, setting_key, setting_value, value_type, description)
+      VALUES (gen_random_uuid(), 'ai.gemini.title_model', 'gemini-2.5-flash-lite', 'STRING',
+              'Google Gemini model used to name chat conversations');
+
+      DELETE
+      FROM app_setting
+      WHERE setting_key IN ('ai.model', 'ai.title_model');
+
+      UPDATE app_setting
+      SET setting_value = 'gemini',
+          description   = 'Active AI vendor adapter id: gemini or openai (see the AI settings page)'
+      WHERE setting_key = 'ai.provider'
+        AND setting_value = 'openai';
+      ]]></sql>
+  </changeSet>
+
+  <changeSet id="015-seed-ai-provider-messages" author="online-menu">
+    <insert tableName="system_message">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="code" value="error.ai.rate_limited"/>
+      <column name="translations"
+        value='{"uz": "AI xizmati limitiga yetildi. Bir daqiqadan so&apos;ng qayta urinib ko&apos;ring", "en": "The AI service limit was reached. Please try again in a minute", "ru": "Достигнут лимит AI-сервиса. Попробуйте ещё раз через минуту"}'/>
+    </insert>
+    <insert tableName="system_message">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="code" value="error.ai.provider_unknown"/>
+      <column name="translations"
+        value='{"uz": "Bunday AI provayder yo&apos;q: %s", "en": "Unknown AI provider: %s", "ru": "Неизвестный AI-провайдер: %s"}'/>
+    </insert>
+  </changeSet>
+
+</databaseChangeLog>

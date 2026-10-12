@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+  <changeSet id="005-create-refresh-token-table" author="online-menu">
+    <createTable tableName="refresh_token">
+      <column name="id" type="UUID">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="user_id" type="UUID">
+        <constraints nullable="false" foreignKeyName="fk_refresh_token_user"
+          references="app_user(id)"/>
+      </column>
+      <column name="token_hash" type="VARCHAR(512)">
+        <constraints nullable="false" unique="true" uniqueConstraintName="uk_refresh_token_hash"/>
+      </column>
+      <column name="expires_at" type="TIMESTAMP WITH TIME ZONE">
+        <constraints nullable="false"/>
+      </column>
+      <column name="revoked" type="BOOLEAN" defaultValueBoolean="false">
+        <constraints nullable="false"/>
+      </column>
+      <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+        <constraints nullable="false"/>
+      </column>
+      <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+        <constraints nullable="false"/>
+      </column>
+      <column name="created_by" type="VARCHAR(200)"/>
+      <column name="updated_by" type="VARCHAR(200)"/>
+    </createTable>
+    <createIndex tableName="refresh_token" indexName="idx_refresh_token_user_id">
+      <column name="user_id"/>
+    </createIndex>
+  </changeSet>
+
+</databaseChangeLog>

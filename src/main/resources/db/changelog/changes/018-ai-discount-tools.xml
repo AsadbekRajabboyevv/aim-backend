@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+  <changeSet id="018-seed-ai-discount-tools" author="online-menu">
+    <sql splitStatements="true"><![CDATA[
+      INSERT INTO ai_tool (id, name, title, description, http_method, path_template, input_schema,
+                           requires_confirmation, allowed_roles, active)
+      SELECT gen_random_uuid(),
+             'list_discounts',
+             'Chegirmalar',
+             'List discounts (newest first, paged): product, regular price, discount price, percent, period (startsAt/endsAt, UTC) and status (ACTIVE = running now, SCHEDULED, EXPIRED, DISABLED). A cafe admin only ever gets their own cafes. Check it before adding a discount: a product cannot have two active discounts whose periods overlap.',
+             'GET',
+             '/api/v1/discounts',
+             $json${"type": "object", "properties": {
+  "cafeSlug": {"type": "string", "description": "Only this cafe"},
+  "status": {"type": "string", "enum": ["ACTIVE", "SCHEDULED", "EXPIRED", "DISABLED"], "description": "Only discounts in this status"},
+  "search": {"type": "string", "description": "Part of the product or cafe slug"},
+  "size": {"type": "integer", "minimum": 1, "maximum": 100, "description": "Page size, default 20"}
+}}$json$, false, '["CAFE_ADMIN", "SUPER_ADMIN"]'::jsonb, true
+      WHERE NOT EXISTS (SELECT 1 FROM ai_tool WHERE name = 'list_discounts');
+
+      INSERT INTO ai_tool (id, name, title, description, http_method, path_template, input_schema,
+                           requires_confirmation, allowed_roles, active)
+      SELECT gen_random_uuid(),
+             'create_discount',
+             'Chegirma qo''shish',
+             'Give one dish a reduced price (call once per dish). Find the productSlug and its current price with list_products. discountPrice is the NEW price in so''m and must be lower than the regular price: for "20% chegirma" on 30000 use 24000; round to whole hundreds. startsAt/endsAt are optional ISO-8601 date-times with the Tashkent offset +05:00, e.g. "ertadan" -> tomorrow 00:00:00+05:00, "hafta oxirigacha" -> Sunday 23:59:59+05:00; leave startsAt out to start now and endsAt out to run until switched off. Check list_discounts first: overlapping active discounts on one dish are rejected.',
+             'POST',
+             '/api/v1/cafes/{cafeSlug}/discounts',
+             $json${"type": "object", "properties": {
+  "cafeSlug": {"type": "string", "title": "Kafe", "description": "Cafe slug",
+    "x-options": {"path": "/api/v1/cafes/my", "items": "data.cafes", "value": "slug", "label": "nameTranslations.uz"}},
+  "productSlug": {"type": "string", "title": "Taom", "description": "Product slug",
+    "x-options": {"path": "/api/v1/cafes/{cafeSlug}/products", "value": "slug", "label": "nameTranslations.uz"}},
+  "discountPrice": {"type": "number", "title": "Chegirma narxi (so'm)", "minimum": 0,
+    "description": "New price in so'm, lower than the regular price",
+    "x-hint": "Taomning asl narxidan kichik bo'lishi kerak"},
+  "startsAt": {"type": "string", "format": "date-time", "title": "Boshlanishi",
+    "description": "ISO-8601 with offset, e.g. 2026-09-25T00:00:00+05:00. Omit to start now",
+    "x-hint": "Bo'sh — hoziroq"},
+  "endsAt": {"type": "string", "format": "date-time", "title": "Tugashi",
+    "description": "ISO-8601 with offset, e.g. 2026-09-28T23:59:59+05:00. Omit to run until switched off",
+    "x-hint": "Bo'sh — o'chirilguncha"},
+  "active": {"type": "boolean", "title": "Faol", "default": true}
+}, "required": ["cafeSlug", "productSlug", "discountPrice"]}$json$, true, '["CAFE_ADMIN", "SUPER_ADMIN"]'::jsonb, true
+      WHERE NOT EXISTS (SELECT 1 FROM ai_tool WHERE name = 'create_discount');
+      ]]></sql>
+  </changeSet>
+
+</databaseChangeLog>

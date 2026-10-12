@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+  <!-- The country decides the billing currency: UZ pays in so'm, the euro area in euros, the rest in dollars. -->
+  <changeSet id="023-user-country" author="online-menu">
+    <addColumn tableName="app_user">
+      <column name="country" type="VARCHAR(2)"/>
+    </addColumn>
+    <!-- Every account so far is Uzbek. -->
+    <sql>UPDATE app_user SET country = 'UZ' WHERE country IS NULL</sql>
+  </changeSet>
+
+  <!-- Plan prices in dollars and euros, in cents; 0 means the plan is not sold in that currency. -->
+  <changeSet id="023-plan-foreign-prices" author="online-menu">
+    <addColumn tableName="billing_plan">
+      <column name="monthly_price_usd" type="BIGINT" defaultValueNumeric="0">
+        <constraints nullable="false"/>
+      </column>
+      <column name="yearly_price_usd" type="BIGINT" defaultValueNumeric="0">
+        <constraints nullable="false"/>
+      </column>
+      <column name="monthly_price_eur" type="BIGINT" defaultValueNumeric="0">
+        <constraints nullable="false"/>
+      </column>
+      <column name="yearly_price_eur" type="BIGINT" defaultValueNumeric="0">
+        <constraints nullable="false"/>
+      </column>
+    </addColumn>
+  </changeSet>
+
+  <changeSet id="023-payment-currency" author="online-menu">
+    <addColumn tableName="billing_payment">
+      <column name="currency" type="VARCHAR(3)" defaultValue="UZS">
+        <constraints nullable="false"/>
+      </column>
+    </addColumn>
+    <addColumn tableName="billing_subscription">
+      <column name="paid_currency" type="VARCHAR(3)" defaultValue="UZS">
+        <constraints nullable="false"/>
+      </column>
+    </addColumn>
+  </changeSet>
+
+  <changeSet id="023-lemonsqueezy-setting" author="online-menu">
+    <insert tableName="app_setting">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="setting_key" value="payment.lemonsqueezy.enabled"/>
+      <column name="setting_value" value="true"/>
+      <column name="value_type" value="BOOLEAN"/>
+      <column name="description" value="Offer Lemon Squeezy (cards, USD/EUR) at checkout outside Uzbekistan (keys come from the server environment)"/>
+    </insert>
+  </changeSet>
+
+  <changeSet id="023-currency-messages" author="online-menu">
+    <sql splitStatements="true"><![CDATA[
+      INSERT INTO system_message (id, code, translations) VALUES
+      (gen_random_uuid(), 'error.billing.country_required',
+       '{"uz": "Avval profilingizda mamlakatni tanlang — to''lov valyutasi shunga qarab belgilanadi", "en": "Choose your country in your profile first — it decides the payment currency", "ru": "Сначала выберите страну в профиле — от неё зависит валюта оплаты"}'::jsonb),
+      (gen_random_uuid(), 'error.billing.currency_unavailable',
+       '{"uz": "Bu tarif hozircha %s valyutasida sotilmaydi", "en": "This plan is not sold in %s yet", "ru": "Этот тариф пока не продаётся в валюте %s"}'::jsonb),
+      (gen_random_uuid(), 'validation.country.invalid',
+       '{"uz": "Mamlakatni tanlang", "en": "Choose a country", "ru": "Выберите страну"}'::jsonb)
+      ON CONFLICT (code) DO NOTHING;
+    ]]></sql>
+  </changeSet>
+
+</databaseChangeLog>

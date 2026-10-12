@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+
+  <changeSet id="009-create-menu-category-table" author="online-menu">
+    <createTable tableName="menu_category">
+      <column name="id" type="UUID">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="slug" type="VARCHAR(180)">
+        <constraints nullable="false" unique="true" uniqueConstraintName="uk_menu_category_slug"/>
+      </column>
+      <column name="cafe_id" type="UUID">
+        <constraints nullable="false"/>
+      </column>
+      <column name="name_translations" type="JSONB">
+        <constraints nullable="false"/>
+      </column>
+      <column name="sort_order" type="INT" defaultValueNumeric="0">
+        <constraints nullable="false"/>
+      </column>
+      <column name="active" type="BOOLEAN" defaultValueBoolean="true">
+        <constraints nullable="false"/>
+      </column>
+      <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+        <constraints nullable="false"/>
+      </column>
+      <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+        <constraints nullable="false"/>
+      </column>
+      <column name="created_by" type="VARCHAR(200)"/>
+      <column name="updated_by" type="VARCHAR(200)"/>
+    </createTable>
+    <addForeignKeyConstraint baseTableName="menu_category" baseColumnNames="cafe_id"
+      constraintName="fk_menu_category_cafe"
+      referencedTableName="cafe" referencedColumnNames="id"
+      onDelete="CASCADE"/>
+    <createIndex tableName="menu_category" indexName="idx_menu_category_cafe_sort">
+      <column name="cafe_id"/>
+      <column name="sort_order"/>
+    </createIndex>
+  </changeSet>
+
+  <changeSet id="009-create-product-table" author="online-menu">
+    <createTable tableName="product">
+      <column name="id" type="UUID">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="slug" type="VARCHAR(180)">
+        <constraints nullable="false" unique="true" uniqueConstraintName="uk_product_slug"/>
+      </column>
+      <column name="cafe_id" type="UUID">
+        <constraints nullable="false"/>
+      </column>
+      <column name="category_id" type="UUID">
+        <constraints nullable="false"/>
+      </column>
+      <column name="name_translations" type="JSONB">
+        <constraints nullable="false"/>
+      </column>
+      <column name="description_translations" type="JSONB"/>
+      <column name="price" type="NUMERIC(12,2)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="portion" type="VARCHAR(50)"/>
+      <column name="image_url" type="VARCHAR(500)"/>
+      <column name="sort_order" type="INT" defaultValueNumeric="0">
+        <constraints nullable="false"/>
+      </column>
+      <column name="active" type="BOOLEAN" defaultValueBoolean="true">
+        <constraints nullable="false"/>
+      </column>
+      <column name="available" type="BOOLEAN" defaultValueBoolean="true">
+        <constraints nullable="false"/>
+      </column>
+      <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+        <constraints nullable="false"/>
+      </column>
+      <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+        <constraints nullable="false"/>
+      </column>
+      <column name="created_by" type="VARCHAR(200)"/>
+      <column name="updated_by" type="VARCHAR(200)"/>
+    </createTable>
+    <addForeignKeyConstraint baseTableName="product" baseColumnNames="cafe_id"
+      constraintName="fk_product_cafe"
+      referencedTableName="cafe" referencedColumnNames="id"
+      onDelete="CASCADE"/>
+    <addForeignKeyConstraint baseTableName="product" baseColumnNames="category_id"
+      constraintName="fk_product_category"
+      referencedTableName="menu_category" referencedColumnNames="id"
+      onDelete="RESTRICT"/>
+    <createIndex tableName="product" indexName="idx_product_category_sort">
+      <column name="category_id"/>
+      <column name="sort_order"/>
+    </createIndex>
+    <createIndex tableName="product" indexName="idx_product_cafe">
+      <column name="cafe_id"/>
+    </createIndex>
+  </changeSet>
+
+  <changeSet id="009-seed-menu-messages" author="online-menu">
+    <insert tableName="system_message">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="code" value="error.category.not_found"/>
+      <column name="translations"
+        value='{"uz": "Kategoriya topilmadi", "en": "Category not found", "ru": "Категория не найдена"}'/>
+    </insert>
+    <insert tableName="system_message">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="code" value="error.category.not_empty"/>
+      <column name="translations"
+        value='{"uz": "Kategoriyada taomlar bor. Avval ularni o&apos;chiring yoki boshqa kategoriyaga o&apos;tkazing", "en": "The category still has products. Delete or move them first", "ru": "В категории есть блюда. Сначала удалите или перенесите их"}'/>
+    </insert>
+    <insert tableName="system_message">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="code" value="error.product.not_found"/>
+      <column name="translations"
+        value='{"uz": "Taom topilmadi", "en": "Product not found", "ru": "Блюдо не найдено"}'/>
+    </insert>
+    <insert tableName="system_message">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="code" value="error.menu.cafe_inactive"/>
+      <column name="translations"
+        value='{"uz": "Bu kafe menyusi hozircha mavjud emas", "en": "This cafe menu is currently unavailable", "ru": "Меню этого кафе сейчас недоступно"}'/>
+    </insert>
+  </changeSet>
+
+  <!-- Bean Validation codes were referenced by DTOs but never seeded, so raw codes reached the UI. -->
+  <changeSet id="009-seed-validation-messages" author="online-menu">
+    <insert tableName="system_message">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="code" value="validation.required"/>
+      <column name="translations"
+        value='{"uz": "Majburiy maydon", "en": "This field is required", "ru": "Обязательное поле"}'/>
+    </insert>
+    <insert tableName="system_message">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="code" value="validation.email.invalid"/>
+      <column name="translations"
+        value='{"uz": "Email noto&apos;g&apos;ri", "en": "Invalid email", "ru": "Некорректный email"}'/>
+    </insert>
+    <insert tableName="system_message">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="code" value="validation.size"/>
+      <column name="translations"
+        value='{"uz": "Qiymat uzunligi noto&apos;g&apos;ri", "en": "Invalid length", "ru": "Недопустимая длина"}'/>
+    </insert>
+    <insert tableName="system_message">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="code" value="validation.password.size"/>
+      <column name="translations"
+        value='{"uz": "Parol kamida 8 ta belgidan iborat bo&apos;lishi kerak", "en": "Password must be at least 8 characters", "ru": "Пароль должен содержать не менее 8 символов"}'/>
+    </insert>
+    <insert tableName="system_message">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="code" value="validation.price.invalid"/>
+      <column name="translations"
+        value='{"uz": "Narx 0 dan kichik bo&apos;lmasligi kerak", "en": "Price cannot be negative", "ru": "Цена не может быть отрицательной"}'/>
+    </insert>
+  </changeSet>
+
+</databaseChangeLog>

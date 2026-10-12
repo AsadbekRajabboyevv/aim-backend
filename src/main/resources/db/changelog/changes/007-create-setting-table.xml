@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="007-create-setting-table" author="online-menu">
+        <createTable tableName="app_setting">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="setting_key" type="VARCHAR(150)">
+                <constraints nullable="false" unique="true" uniqueConstraintName="uk_app_setting_key"/>
+            </column>
+            <column name="setting_value" type="VARCHAR(1000)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="value_type" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="VARCHAR(500)"/>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="VARCHAR(200)"/>
+            <column name="updated_by" type="VARCHAR(200)"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="007-seed-settings" author="online-menu">
+        <insert tableName="app_setting">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="setting_key" value="cafe.max_per_user"/>
+            <column name="setting_value" value="3"/>
+            <column name="value_type" value="INTEGER"/>
+            <column name="description" value="Maximum number of cafes a single cafe admin can own"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="007-seed-setting-messages" author="online-menu">
+        <insert tableName="system_message">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="code" value="error.setting.not_found"/>
+            <column name="translations" value='{"uz": "Sozlama topilmadi", "en": "Setting not found", "ru": "Настройка не найдена"}'/>
+        </insert>
+        <insert tableName="system_message">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="code" value="error.setting.invalid_value"/>
+            <column name="translations" value='{"uz": "Sozlama qiymati %s turiga mos emas", "en": "Setting value does not match type %s", "ru": "Значение настройки не соответствует типу %s"}'/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>

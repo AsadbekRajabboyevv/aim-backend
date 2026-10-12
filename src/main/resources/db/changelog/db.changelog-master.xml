@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+  <include file="db/changelog/changes/001-create-language-table.xml" relativeToChangelogFile="false"/>
+  <include file="db/changelog/changes/002-create-system-message-table.xml" relativeToChangelogFile="false"/>
+  <include file="db/changelog/changes/003-create-cafe-table.xml" relativeToChangelogFile="false"/>
+  <include file="db/changelog/changes/004-create-app-user-table.xml" relativeToChangelogFile="false"/>
+  <include file="db/changelog/changes/005-create-refresh-token-table.xml" relativeToChangelogFile="false"/>
+  <include file="db/changelog/changes/006-seed-data.xml" relativeToChangelogFile="false"/>
+  <include file="db/changelog/changes/007-create-setting-table.xml" relativeToChangelogFile="false"/>
+  <include file="db/changelog/changes/008-cafe-owner.xml" relativeToChangelogFile="false"/>
+  <include file="db/changelog/changes/009-create-menu-tables.xml" relativeToChangelogFile="false"/>
+  <include file="db/changelog/changes/010-seed-menu-ui-messages.xml" relativeToChangelogFile="false"/>
+  <include file="db/changelog/changes/011-cafe-details-theme-qr.xml" relativeToChangelogFile="false"/>
+  <include file="db/changelog/changes/012-product-tags-discounts.xml" relativeToChangelogFile="false"/>
+  <include file="db/changelog/changes/013-ai-assistant.xml" relativeToChangelogFile="false"/>
+  <include file="db/changelog/changes/014-ai-tool-schema-text.xml" relativeToChangelogFile="false"/>
+  <include file="db/changelog/changes/015-ai-gemini-provider-settings.xml" relativeToChangelogFile="false"/>
+  <include file="db/changelog/changes/016-ai-gemini-model-refresh.xml" relativeToChangelogFile="false"/>
+  <include file="db/changelog/changes/017-ai-tool-descriptions-autofill.xml" relativeToChangelogFile="false"/>
+  <include file="db/changelog/changes/018-ai-discount-tools.xml" relativeToChangelogFile="false"/>
+  <include file="db/changelog/changes/019-billing.xml" relativeToChangelogFile="false"/>
+  <include file="db/changelog/changes/020-auth-password-not-set-message.xml" relativeToChangelogFile="false"/>
+  <include file="db/changelog/changes/021-fix-system-message-translations.xml" relativeToChangelogFile="false"/>
+  <include file="db/changelog/changes/022-seed-ui-messages.xml" relativeToChangelogFile="false"/>
+  <include file="db/changelog/changes/023-multi-currency-billing.xml" relativeToChangelogFile="false"/>
+  <include file="db/changelog/changes/024-email-verification-telegram.xml" relativeToChangelogFile="false"/>
+  <include file="db/changelog/changes/025-legal-documents.xml" relativeToChangelogFile="false"/>
+  <include file="db/changelog/changes/026-password-reset.xml" relativeToChangelogFile="false"/>
+
+</databaseChangeLog>

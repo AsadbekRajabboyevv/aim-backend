@@ -1,0 +1,138 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: ai-menu-backend
+  config:
+    import: optional:classpath:application-local.yml
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:online_menu_db}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:1234}
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: false
+        jdbc:
+          time_zone: UTC
+
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.xml
+
+  # SMTP for verification emails; without MAIL_HOST the code is only written to the log
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:true}
+          starttls:
+            enable: ${MAIL_STARTTLS:true}
+          connectiontimeout: 10000
+          timeout: 10000
+          writetimeout: 10000
+
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:change-this-to-a-long-random-secret-before-deploying-to-production}
+    access-token-expiration-ms: ${JWT_ACCESS_EXPIRATION_MS:900000}
+    refresh-token-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS:604800000}
+
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200}
+
+  upload:
+    base-dir: ${UPLOAD_BASE_DIR:./uploads}
+
+  mail:
+    from: ${MAIL_FROM:}
+
+  auth:
+    email-verification:
+      # Frontend page the emailed link opens (?token=...)
+      link-base-url: ${EMAIL_VERIFICATION_URL:http://localhost:4200/auth/verify-email}
+      ttl-minutes: ${EMAIL_VERIFICATION_TTL_MINUTES:30}
+      resend-cooldown-seconds: ${EMAIL_VERIFICATION_RESEND_SECONDS:60}
+      max-attempts: ${EMAIL_VERIFICATION_MAX_ATTEMPTS:5}
+    password-reset:
+      # Frontend page the emailed reset link opens (?token=...)
+      link-base-url: ${PASSWORD_RESET_URL:http://localhost:4200/auth/reset-password}
+
+  # Telegram Login Widget; both empty turns Telegram sign-in off
+  telegram:
+    bot-username: ${TELEGRAM_BOT_USERNAME:}
+    bot-token: ${TELEGRAM_BOT_TOKEN:}
+    auth-max-age-seconds: 86400
+
+  public-menu-base-url: ${PUBLIC_MENU_BASE_URL:http://localhost:4200/menu}
+
+  oauth2:
+    redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:4200/auth/google/callback}
+    google:
+      client-id: ${GOOGLE_CLIENT_ID:}
+      client-secret: ${GOOGLE_CLIENT_SECRET:}
+
+
+  ai:
+    request-timeout-seconds: ${AI_REQUEST_TIMEOUT_SECONDS:90}
+    providers:
+      openai:
+        api-key: ${OPENAI_API_KEY:}
+        base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}
+      gemini:
+        api-key: ${GEMINI_API_KEY:}
+        base-url: ${GEMINI_BASE_URL:https://generativelanguage.googleapis.com/v1beta}
+
+  # Keys of each payment system; see PaymentProvider for adding a new one.
+  payment:
+    return-url: ${BILLING_RETURN_URL:http://localhost:4200/billing}
+    callback-base-url: ${PAYMENT_CALLBACK_BASE_URL:http://localhost:8080}
+    providers:
+      payme:
+        merchant-id: ${PAYME_MERCHANT_ID:}
+        secret-key: ${PAYME_SECRET_KEY:}
+        checkout-url: ${PAYME_CHECKOUT_URL:https://checkout.paycom.uz}
+      click:
+        service-id: ${CLICK_SERVICE_ID:}
+        merchant-id: ${CLICK_MERCHANT_ID:}
+        secret-key: ${CLICK_SECRET_KEY:}
+        merchant-user-id: ${CLICK_MERCHANT_USER_ID:}
+        checkout-url: ${CLICK_CHECKOUT_URL:https://my.click.uz/services/pay}
+      uzum:
+        service-id: ${UZUM_SERVICE_ID:}
+        login: ${UZUM_LOGIN:}
+        password: ${UZUM_PASSWORD:}
+        checkout-url: ${UZUM_CHECKOUT_URL:}
+      # Card payments outside Uzbekistan; one Lemon Squeezy store (and product variant) per currency.
+      lemonsqueezy:
+        api-key: ${LEMONSQUEEZY_API_KEY:}
+        signing-secret: ${LEMONSQUEEZY_SIGNING_SECRET:}
+        api-url: ${LEMONSQUEEZY_API_URL:https://api.lemonsqueezy.com/v1}
+        store-id-usd: ${LEMONSQUEEZY_STORE_ID_USD:}
+        variant-id-usd: ${LEMONSQUEEZY_VARIANT_ID_USD:}
+        store-id-eur: ${LEMONSQUEEZY_STORE_ID_EUR:}
+        variant-id-eur: ${LEMONSQUEEZY_VARIANT_ID_EUR:}
+      sandbox:
+        enabled: ${PAYMENT_SANDBOX_ENABLED:false}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  level:
+    com.onlinemenu: ${LOG_LEVEL:INFO}
