@@ -17,11 +17,13 @@ public class GoogleOAuth2Config {
   @Bean
   public ClientRegistrationRepository clientRegistrationRepository(
       @Value("${app.oauth2.google.client-id}") String clientId,
-      @Value("${app.oauth2.google.client-secret}") String clientSecret) {
+      @Value("${app.oauth2.google.client-secret}") String clientSecret,
+      @Value("${app.oauth2.google.redirect-uri-template:{baseUrl}/login/oauth2/code/{registrationId}}") String redirectUriTemplate) {
     return new InMemoryClientRegistrationRepository(
         CommonOAuth2Provider.GOOGLE.getBuilder(REGISTRATION_ID)
             .clientId(clientId)
             .clientSecret(clientSecret)
+            .redirectUri(redirectUriTemplate)
             .scope("email", "profile")
             .build());
   }
